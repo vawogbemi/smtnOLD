@@ -97,7 +97,7 @@ export default function Pricing() {
   return (
     <Stack maw={1000} mx={"auto"}>
       <Title order={1}>Pricing</Title>
-      <Accordion>{items}</Accordion>
+      <Accordion defaultValue={'Lagos to Toronto'}>{items}</Accordion>
     </Stack>
   );
 }
