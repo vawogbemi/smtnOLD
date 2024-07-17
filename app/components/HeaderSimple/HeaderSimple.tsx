@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import classes from "./HeaderSimple.module.css";
+// eslint-disable-next-line import/no-unresolved
 import logo from "/logo.png";
 import { useLocation } from "@remix-run/react";
 
@@ -20,10 +21,11 @@ export function HeaderSimple() {
 
   const links = location.pathname.startsWith("/dashboard")
     ? [
-        { link: "/dashboard", label: "Dashboard" },
+        //{ link: "/dashboard/overview", label: "Overview" },
         { link: "/dashboard/forms", label: "Forms" },
         { link: "/dashboard/shipments", label: "Shipments" },
         { link: "/dashboard/deliveries", label: "Deliveries" },
+        { link: "/dashboard/references", label: "References"},
         { link: "/dashboard/customers", label: "Customers" },
         { link: "/logout", label: "Log Out" },
       ]
@@ -41,20 +43,18 @@ export function HeaderSimple() {
       key={link.label}
       href={link.link}
       className={classes.link}
-      data-active={
-        link.link.slice(1) == location.pathname.split("/").at(1) || undefined
-      }
+      data-active={location.pathname.startsWith(link.link) || undefined}
     >
       {link.label}
     </a>
   ));
-
+  
   return (
     <Box>
       <header className={classes.header}>
         <Container size="md" className={classes.inner}>
           <Anchor href="/">
-            <Image src={logo} h={85} />
+            <Image src={logo} w={85} />
           </Anchor>
           <Group gap={5} visibleFrom="xs">
             {items}

@@ -12,7 +12,7 @@ import {
 import { useForm } from "@mantine/form";
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { redirect, useLoaderData, useSubmit } from "@remix-run/react";
-import { sendSms, supabaseServiceRoleClient } from "~/api/server";
+import { supabaseServiceRoleClient } from "~/api/server";
 import { PhoneSelect } from "~/components/PhoneSelect/PhoneSelect";
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -99,23 +99,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     console.log(incrementError);
   }
 
-  const body =
-    "SMTN: Your reference number is " +
-    reference!.id +
-    ". \n Follow this link to fill out details: " +
-    "www.smtninternational.com/forms/" +
-    reference?.form +
-    "/reference/" +
-    reference!.id +
-    "\n Thank you, \n SMTN International";
-
-  sendSms({
-    from: process.env.TWILIO_PHONE_NUMBER!,
-    to: formData.get("phone") as string,
-    body: body,
-  });
-
-  return redirect("/dashboard/forms");
+  return redirect(`/dashboard/reference/${reference!.id}`);
 };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
@@ -150,7 +134,9 @@ export default function Form() {
     validate: {
       phone: (val) =>
         /^\+\d+$/.test(val)
-          ? (val.length < 5 ? null : 'Length must be less than 5 characters')
+          ? val.length > 5
+            ? null
+            : "Length must be greater than 5 characters"
           : "Phone number is missing country code",
     },
   });
@@ -200,7 +186,7 @@ export default function Form() {
             description="Notes"
             placeholder="sender says package will be picked up 2 weeks late"
             {...form.getInputProps("notes")}
-            onChange={()=>console.log(form.getTransformedValues())}
+            onChange={() => console.log(form.getTransformedValues())}
           />
           <NumberInput
             min={1}

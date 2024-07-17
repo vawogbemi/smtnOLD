@@ -4,7 +4,7 @@ import { createServerClient, parse, serialize } from '@supabase/ssr'
 export async function loader({ request }: LoaderFunctionArgs) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') || '/'
+  const next = requestUrl.searchParams.get('next') || '/dashboard'
   const headers = new Headers()
 
   if (code) {

@@ -4,6 +4,7 @@ const offices = [
   {
     from: "Lagos",
     to: "Toronto",
+    method: "Air Cargo", 
     currency: "₦",
     notes: "",
     rates: [
@@ -27,6 +28,7 @@ const offices = [
   {
     from: "Toronto",
     to: "Lagos",
+    method: "Air Cargo", 
     currency: "$",
     notes: "",
     rates: [
@@ -45,16 +47,60 @@ const offices = [
         rate: 20,
         clearance: "",
       },
+      {
+        range: "Laptop",
+        rate: 60,
+        clearance: "",
+      },
+      {
+        range: "Phone",
+        rate: 30,
+        clearance: "",
+      },
+      {
+        range: "Tablet",
+        rate: 40,
+        clearance: "",
+      },
+      {
+        range: "Game Console",
+        rate: 100,
+        clearance: "",
+      },
+      {
+        range: "Supplements",
+        rate: 1,
+        clearance: "",
+      },
     ],
   },
+  {
+    from: "Toronto",
+    to: "Lagos",
+    method: "Ocean", 
+    currency: "$",
+    notes: "",
+    rates: [
+      {
+        range: "Small Barrel",
+        rate: 280,
+        clearance: "",
+      },
+      {
+        range: "Large Barrel",
+        rate: 350,
+        clearance: "",
+      },
+    ],
+  }
 ];
 
 const items = offices.map((item) => (
   <Accordion.Item
-    key={`${item.from} to ${item.to}`}
-    value={`${item.from} to ${item.to}`}
+    key={`${item.from} to ${item.to} | ${item.method}`}
+    value={`${item.from} to ${item.to} | ${item.method}`}
   >
-    <Accordion.Control>{`${item.from} to ${item.to}`}</Accordion.Control>
+    <Accordion.Control>{`${item.from} to ${item.to} | ${item.method}`}</Accordion.Control>
     <Accordion.Panel>
       <PricingTable currency={item.currency} elements={item.rates} />
       {item.notes}
@@ -97,7 +143,7 @@ export default function Pricing() {
   return (
     <Stack maw={1000} mx={"auto"}>
       <Title order={1}>Pricing</Title>
-      <Accordion defaultValue={'Lagos to Toronto'}>{items}</Accordion>
+      <Accordion defaultValue={'Lagos to Toronto | Air Cargo'}>{items}</Accordion>
     </Stack>
   );
 }
