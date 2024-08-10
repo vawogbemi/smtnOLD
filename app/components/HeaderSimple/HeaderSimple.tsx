@@ -22,9 +22,7 @@ export function HeaderSimple() {
   const links = location.pathname.startsWith("/dashboard")
     ? [
         //{ link: "/dashboard/overview", label: "Overview" },
-        { link: "/dashboard/forms", label: "Forms" },
         { link: "/dashboard/shipments", label: "Shipments" },
-        { link: "/dashboard/deliveries", label: "Deliveries" },
         { link: "/dashboard/references", label: "References"},
         { link: "/dashboard/customers", label: "Customers" },
         { link: "/logout", label: "Log Out" },
@@ -33,7 +31,9 @@ export function HeaderSimple() {
         { link: "/tracking", label: "Tracking" },
         { link: "/pricing", label: "Pricing" },
         { link: "/faq", label: "FAQ" },
-        { link: "/contact", label: "Contact Us" },
+        //{ link: "/offices", label: "Offices" },
+        //{ link: "/nin", label: "National Identification Number" },
+        //{ link: "/bvn", label: "Banking Verification Number" },
       ];
 
   const [opened, { toggle, close }] = useDisclosure(false);
