@@ -10,7 +10,7 @@ export const loader = async () => {
 
   const { data: references, error: referencesError } = await supabase
     .from("references")
-    .select("*, forms (*)")
+    .select("*")
     .order("id", { ascending: true });
 
   if (referencesError) {
@@ -49,9 +49,6 @@ export default function References() {
           ?.filter(
             (reference) =>
               reference.id.toString().includes(filter) ||
-              reference.forms?.name
-                .toLowerCase()
-                .includes(filter.toLowerCase()) ||
               reference.shipment.toString().includes(filter)
           )
           .map((reference) => (
@@ -65,10 +62,6 @@ export default function References() {
               h={75}
             >
               <Group justify="space-between">
-                <Stack align="center">
-                  <Title order={5}>Form</Title>
-                  <Text c={"gray"} mt={-15}>{`${reference.forms?.name}`}</Text>
-                </Stack>
                 <Stack align="center">
                   <Title order={5}>Shipment</Title>
                   <Text c={"gray"} mt={-15}>{`${reference.shipment}`}</Text>
