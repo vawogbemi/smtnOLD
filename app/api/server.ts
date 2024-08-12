@@ -3,6 +3,28 @@ import { createClient } from "@supabase/supabase-js";
 import { Database } from "database.types";
 import twilio from "twilio";
 
+function singleton<Value>(name: string, value: () => Value): Value {
+  const g = global as { __singletons?: Record<string, Value> };
+  g.__singletons ??= {};
+  g.__singletons[name] ??= value();
+  return g.__singletons[name];
+}
+
+const twilioClient: twilio.Twilio = singleton<twilio.Twilio>("twilio", () =>
+  twilio(
+    process.env.TWILIO_ACCOUNT_SID as string,
+    process.env.TWILIO_AUTH_TOKEN as string
+  )
+);
+
+export async function sendSms(request: {
+  from: string;
+  to: string;
+  body: string;
+}) {
+  return twilioClient.messages.create(request);
+}
+
 export function supabaseAnonServerClient(request: Request) {
   const cookies = parse(request.headers.get("Cookie") ?? "");
   const headers = new Headers();
@@ -37,25 +59,54 @@ export function supabaseServiceRoleClient() {
   return supabase;
 }
 
-const twilioClient: twilio.Twilio = singleton<twilio.Twilio>("twilio", () =>
-  twilio(
-    process.env.TWILIO_ACCOUNT_SID as string,
-    process.env.TWILIO_AUTH_TOKEN as string
-  )
-);
+export async function createReceiever(name: string, phone: string) {
+  const supabase = supabaseServiceRoleClient();
 
-export async function sendSms(request: {
-  from: string;
-  to: string;
-  body: string;
-}) {
-  return twilioClient.messages.create(request);
+  const { data, error } = await supabase
+    .from("receivers")
+    .insert({ name: name, phone: phone })
+    .select("*");
+
+  if (error) {
+    console.error(`createReceiverError: ${error.message}`);
+  }
+
+  return data;
 }
 
-export function singleton<Value>(name: string, value: () => Value): Value {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const g = global as any;
-  g.__singletons ??= {};
-  g.__singletons[name] ??= value();
-  return g.__singletons[name];
+export async function createReference(
+  shipment: number,
+  description: string,
+  notes: string,
+  packages: number,
+  total_weight: number,
+  small: number,
+  large: number,
+  paid: boolean,
+  sender: number,
+  receiver: number
+) {
+  const supabase = supabaseServiceRoleClient();
+
+  const { data, error } = await supabase
+    .from("references")
+    .insert({
+      shipment: shipment,
+      description: description,
+      notes: notes,
+      packages: packages,
+      total_weight: total_weight,
+      small: small,
+      large: large,
+      paid: paid,
+      sender: sender,
+      receiver: receiver,
+    })
+    .select("*");
+
+  if (error) {
+    console.error(`createReferenceError: ${error.message}`);
+  }
+
+  return data;
 }

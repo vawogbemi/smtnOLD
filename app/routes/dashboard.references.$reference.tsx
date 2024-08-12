@@ -126,7 +126,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   const { data: references, error: referencesError } = await supabase
     .from("references")
-    .select("*, forms (*)")
+    .select("*")
     .eq("id", params.reference!);
 
   if (referencesError) {
@@ -144,23 +144,32 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   const reference = references?.at(0);
 
-  const { data: customers, error: customersError } = await supabase
-    .from("customers")
+  const {data: customers, error: customersError} = await supabase.from("customers").select("*").eq("id", reference!.sender)
+  
+  const sender = customers?.at(0)
+
+  if (customersError) {
+    console.error(customersError)
+  }
+  
+  const { data: receivers, error: receiversError } = await supabase
+    .from("receivers")
     .select()
     .in("id", [
-      reference?.sender ?? 0,
       reference?.receiver ?? 0,
       reference?.customer_3 ?? 0,
       reference?.customer_4 ?? 0,
       reference?.customer_5 ?? 0,
     ]);
 
-  if (customersError) {
-    console.error(customersError);
+  const receiver = receivers?.at(0);
+
+  if (receiversError) {
+    console.error(receiversError);
   }
 
   if (references?.length && boxes?.length) {
-    return { reference: references?.at(0), boxes: boxes, customers: customers };
+    return { reference: references?.at(0), boxes: boxes, sender: sender, receiver: receiver, receivers: receivers?.slice(1) };
   }
   return redirect("/dashboard/references");
 };
@@ -168,7 +177,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 function CustomerCard(props: {
   customer: {
     created_at: string;
-    email: string | null;
     id: number;
     name: string | null;
     phone: string;
@@ -249,7 +257,6 @@ function CustomerCard(props: {
           <>
             <Flex>
               <Text>{`${customer.phone}`}</Text>
-              <Text mx={"auto"}>{`${customer.email}`}</Text>
             </Flex>
           </>
         )}
@@ -266,10 +273,10 @@ function printLabel(
     id: number;
     name: string | null;
     phone: string;
+    address: string
   },
   receiver: {
     created_at: string;
-    email: string | null;
     id: number;
     name: string | null;
     phone: string;
@@ -310,7 +317,7 @@ function printLabel(
     // Draw sender information
     doc.setFontSize(9);
     doc.text("From:", 0.25, 0.25);
-    doc.text(`${sender.name}\n${sender.phone}\n${sender.email}`, 0.25, 0.5);
+    doc.text(`${sender.name}\n${sender.phone}`, 0.25, 0.5);
 
     // Draw a horizontal line to separate sender and recipient sections
     doc.line(0, labelHeight * 0.25, labelWidth, labelHeight * 0.25);
@@ -319,7 +326,7 @@ function printLabel(
     doc.setFontSize(20);
     doc.text("To:", 0.25, labelHeight * 0.35);
     doc.text(
-      `${receiver.name}\n${receiver.phone}\n${receiver.email}`,
+      `${receiver.name}\n${receiver.phone}`,
       0.25,
       labelHeight * 0.45
     );
@@ -350,11 +357,9 @@ function printLabel(
 }
 
 export default function Reference() {
-  const { reference, boxes, customers } = useLoaderData<typeof loader>();
+  const { reference, boxes, sender, receiver, receivers } = useLoaderData<typeof loader>();
 
   const customer_map = [
-    "sender",
-    "receiver",
     "customer_3",
     "customer_4",
     "customer_5",
@@ -391,21 +396,18 @@ export default function Reference() {
           >{`#${reference?.id}`}</Title>
         </Stack>
         <Group ml={"auto"}>
-          <Tooltip label="Needs sender and receiver to be set">
             <Button
-              disabled={!reference?.sender || !reference?.receiver}
               onClick={() =>
                 printLabel(
                   reference!.id,
-                  customers!.at(0)!,
-                  customers!.at(1)!,
+                  sender!,
+                  receiver!,
                   boxes
                 )
               }
             >
               Print Label
             </Button>
-          </Tooltip>
           <Tooltip label="Needs either sender or receiver to be set">
             <Button disabled={!reference?.sender && !reference?.receiver}>
               Send Sms
@@ -423,10 +425,6 @@ export default function Reference() {
       <Card>
         <Grid mb={10}>
           <Grid.Col span={4}>
-            <Title order={4}>Form</Title>
-            <Text>{`${reference?.forms?.name}`}</Text>
-          </Grid.Col>
-          <Grid.Col span={4}>
             <Title order={4}>Shipment</Title>
             <Text>{`${reference?.shipment}`}</Text>
           </Grid.Col>
@@ -436,15 +434,11 @@ export default function Reference() {
           </Grid.Col>
           <Grid.Col span={4}>
             <Title order={4}>Boxes</Title>
-            <Text>{`${reference?.boxes}`}</Text>
+            <Text>{`${reference?.packages}`}</Text>
           </Grid.Col>
           <Grid.Col span={4}>
             <Title order={4}>Total Weight</Title>
             <Text>{`${reference?.total_weight} kg`}</Text>
-          </Grid.Col>
-          <Grid.Col span={4}>
-            <Title order={4}>Amount Paid</Title>
-            <Text>{`$${reference?.amount_paid}`}</Text>
           </Grid.Col>
           <Grid.Col span={4}>
             <Title order={4}>Paid</Title>
@@ -517,13 +511,13 @@ export default function Reference() {
         </Tabs>
       </Card>
       <Title order={2}>Customers</Title>
-      {customers!.map(
+      {receivers!.map(
         (customer, index) =>
           customer && (
             <CustomerCard key={index} customer={customer} index={index} />
           )
       )}
-      {customers && customers.length < 4 && (
+      {receivers && receivers.length < 3 && (
         <Card withBorder radius="md" my={20}>
           <form
             onSubmit={form.onSubmit((values) =>
@@ -531,13 +525,13 @@ export default function Reference() {
                 {
                   ...values,
                   action: "add-customer",
-                  role: customer_map[customers!.length],
+                  role: customer_map[receivers!.length],
                 },
                 { method: "post" }
               )
             )}
           >
-            <Title order={4}>Add {customer_map[customers!.length]}</Title>
+            <Title order={4}>Add {customer_map[receivers!.length]}</Title>
             <PhoneSelect
               {...form.getInputProps("phone")}
               onChange={(value) => form.setFieldValue("phone", value)}

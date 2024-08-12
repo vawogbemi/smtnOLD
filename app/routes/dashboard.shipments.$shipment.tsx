@@ -1,33 +1,14 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import {
-  Card,
-  Title,
-  Text,
-  Grid,
-  Stack,
-  Flex,
-  Group,
-  Button,
-} from "@mantine/core";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { useLoaderData, useOutletContext } from "@remix-run/react";
 import { supabaseServiceRoleClient } from "~/api/server";
-import { ReferenceTable } from "~/components/ReferenceTable";
+import { ShipmentTable } from "~/components/ShipmentTable/ShipmentTable";
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const supabase = supabaseServiceRoleClient();
 
-  const { data: shipment, error } = await supabase
-    .from("shipments")
-    .select("*, forms (*)")
-    .eq("id", params.shipment!)
-    .single();
-
-  if (error) {
-    throw new Response("Not Found", { status: 404 });
-  }
   const { data: references, error: referencesError } = await supabase
     .from("references")
-    .select("*")
+    .select("*, customers (id, name), receivers (id, name)")
     .eq("shipment", params.shipment!)
     .order("id", { ascending: true });
 
@@ -37,80 +18,89 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     );
   }
 
-  return json({ shipment, references });
+  return json({ references });
 };
 
-function ShipmentDetails(props: {
-  shipment: {
-    boxes: number;
-    created_at: string;
-    form: number;
-    id: number;
-    last_updated: string;
-    status: number;
-    forms: {
-      created_at: string;
-      from: string;
-      id: number;
-      name: string;
-      shipments: number;
-      to: string;
-    } | null;
-  };
-}) {
-  const { shipment } = props;
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+ 
+  if (formData.get("action") === "paid"){
+    const supabase = supabaseServiceRoleClient();
+    const { error } = await supabase
+      .from("references")
+      .update({ paid: parseInt(formData.get("paid") as string) ? false : true })
+      .eq("id", formData.get("id") as string)
+      .single();
 
-  return (
-    <Card>
-      <Grid mb={10}>
-        <Grid.Col span={4}>
-          <Title order={4}>Status</Title>
-          <Text>{shipment.status}</Text>
-        </Grid.Col>
-        <Grid.Col span={4}>
-          <Title order={4}>Form</Title>
-          <Text>{`${shipment.forms?.name}`}</Text>
-        </Grid.Col>
-        <Grid.Col span={4}>
-          <Title order={4}>Created</Title>
-          <Text>{new Date(shipment!.created_at).toLocaleString()}</Text>
-        </Grid.Col>
-        <Grid.Col span={4}>
-          <Title order={4}>Boxes</Title>
-          <Text>{`${shipment?.boxes}`}</Text>
-        </Grid.Col>
-      </Grid>
-    </Card>
-  );
+    if (error) {
+      console.error(`shipmentDetails | paidError: ${error.message}`);
+    }
+    return null;
+  }
+
+  if (formData.get("action") === "received"){
+    const supabase = supabaseServiceRoleClient();
+    const { error } = await supabase
+      .from("references")
+      .update({ received: parseInt(formData.get("received") as string) ? false : true })
+      .eq("id", formData.get("id") as string)
+      .single();
+
+    if (error) {
+      console.error(`shipmentDetails | receivedError: ${error.message}`);
+    }
+    return null;
+  }
+
+  return null;
 }
 
+
 export default function Shipment() {
-  const { shipment, references } = useLoaderData<typeof loader>();
+  const { references } = useLoaderData<typeof loader>();
+  const { shipment } = useOutletContext<{
+    shipment:
+      | {
+          created_at: string;
+          from: string;
+          id: number;
+          last_updated: string;
+          method: string;
+          packages: number;
+          status: number;
+          to: string;
+        }
+      | undefined;
+  }>();
+
+  const data = (references ?? []).map((reference) => ({
+    reference: reference.id,
+    sender: {
+      id: reference.customers?.id ?? 0,
+      name: reference.customers?.name ?? "Unknown",
+    },
+    receiver: {
+      id: reference.receivers?.id ?? 0,
+      name: reference.receivers?.name ?? "Unknown",
+    },
+    description: reference.description,
+    paid: reference.paid,
+    received: reference.received,
+    packages: reference.packages,
+    total_weight: reference.total_weight,
+    small: reference.small,
+    large: reference.large,
+  }));
 
   return (
-    <Card withBorder radius="md" px={{ md: 200, lg: 300, xl: 400 }}>
-      {" "}
-      <Flex>
-        <Stack mb={"lg"}>
-          <Title order={1}>Shipment</Title>
-          <Title
-            order={3}
-            c={"gray"}
-            mt={-20}
-            mb={-10}
-          >{`#${shipment.id}`}</Title>
-        </Stack>
-        <Group ml={"auto"}>
-          <Button>Print Manifest</Button>
-          <Button>Send Sms</Button>
-        </Group>
-      </Flex>
-      <ShipmentDetails shipment={shipment} />
-      <Title order={3} mt={20}>
-        {" "}
-        References{" "}
-      </Title>
-      <ReferenceTable references={references ?? []} />
-    </Card>
+    <>
+      {shipment && data ? (
+        <>
+          <ShipmentTable data={data} method={shipment.method} />
+        </>
+      ) : (
+        <></>
+      )}
+    </>
   );
 }

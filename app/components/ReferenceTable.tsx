@@ -3,23 +3,23 @@ import { IconCheck, IconX } from "@tabler/icons-react";
 
 export function ReferenceTable(props: {
   references: {
-    amount_paid: number;
-    boxes: number | null;
-    created_at: string;
-    customer_3: number | null;
-    customer_4: number | null;
-    customer_5: number | null;
-    delivery: boolean;
-    description: string;
-    form: number;
-    id: number;
-    notes: string;
-    paid: boolean;
-    received: boolean;
-    receiver: number | null;
-    sender: number | null;
-    shipment: number;
-    total_weight: number;
+    created_at: string
+    customer_3: number | null
+    customer_4: number | null
+    customer_5: number | null
+    delivery: number | null
+    description: string
+    id: number
+    large: number
+    notes: string
+    packages: number
+    paid: boolean
+    received: boolean
+    receiver: number
+    sender: number
+    shipment: number
+    small: number
+    total_weight: number
   }[];
 }) {
   const { references } = props;

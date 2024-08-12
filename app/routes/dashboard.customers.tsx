@@ -1,12 +1,16 @@
 import {
-  Anchor,
+  Button,
   Card,
+  Divider,
+  Flex,
+  Group,
   Input,
   ScrollArea,
-  Table,
+  Stack,
   Text,
   Title,
 } from "@mantine/core";
+import { upperFirst } from "@mantine/hooks";
 import { json } from "@remix-run/node";
 import { Outlet, useLoaderData, useLocation } from "@remix-run/react";
 import { useState } from "react";
@@ -21,98 +25,107 @@ export const loader = async () => {
     .order("id", { ascending: true });
 
   if (customersError) {
-    console.log(
-      `dashboard/references | referencesError: ${customersError.message}`
-    );
+    console.log(`customers | customersError: ${customersError.message}`);
   }
 
   return json({ customers });
 };
 
-function CustomersTable(props: {
-  customers: {
-    created_at: string;
-    email: string | null;
-    id: number;
-    name: string | null;
-    phone: string;
-  }[];
-}) {
-  const { customers } = props;
-
-  const rows = customers.map((row) => (
-    <Table.Tr key={row.id}>
-      <Table.Td align="left">
-        <Anchor href={`/dashboard/customers/${row.id}`}> {row.id} </Anchor>
-      </Table.Td>
-      <Table.Td align="left">{row.name}</Table.Td>
-      <Table.Td align="left">{row.phone}</Table.Td>
-      <Table.Td align="left">{row.email}</Table.Td>
-    </Table.Tr>
-  ));
-
-  return (
-    <ScrollArea h={300}>
-      <Table miw={700}>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Id</Table.Th>
-            <Table.Th>Name</Table.Th>
-            <Table.Th>Phone</Table.Th>
-            <Table.Th>Email</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        {rows.length > 0 ? (
-          <Table.Tbody>{rows}</Table.Tbody>
-        ) : (
-          <Table.Td colSpan={4}>
-            <Text fw={500} ta="center">
-              Nothing found
-            </Text>
-          </Table.Td>
-        )}
-      </Table>
-    </ScrollArea>
-  );
-}
-
-export default function Customers() {
+export default function Shipments() {
   const { customers } = useLoaderData<typeof loader>();
+  const pathnames = useLocation().pathname.split("/");
 
-  const location = useLocation();
-
-  const [filter, setFilter] = useState("");
+  const [search, setSearch] = useState("");
 
   return (
-    <Card withBorder radius="md" maw={1500} mx={"auto"}>
-      <Title order={1} mb={10}>
-        Customers
-      </Title>
-      {location.pathname == "/dashboard/customers/" ||
-      location.pathname == "/dashboard/customers" ? (
-        <>
-          <Input
-            ml={"auto"}
-            w={400}
-            placeholder="Filter"
-            onChange={(e) => setFilter(e.target.value)}
-          />
-          <CustomersTable
-            customers={
-              customers?.filter(
+    <>
+      <Stack pt={20} mb={20} justify="space-between">
+        <Title order={1} mb={10}>
+          {" "}
+          Customers{" "}
+        </Title>
+        <Group justify="space-between">
+          <Group>
+            <Input
+              placeholder="Search"
+              w={500}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </Group>
+          <Group>
+            <Button>Send Sms</Button>
+          </Group>
+        </Group>
+      </Stack>
+      <Divider />
+      <Flex h={"70vh"}>
+        <ScrollArea h={"70vh"} w={"35%"}>
+          {customers &&
+            customers
+              .filter(
                 (customer) =>
-                  customer.id.toString().includes(filter) ||
-                  (customer.name && customer.name.includes(filter)) ||
-                  (customer.email &&
-                    customer.email.toString().includes(filter)) ||
-                  customer.phone.toString().includes(filter)
-              ) ?? []
-            }
+                  customer.name
+                    .toLowerCase()
+                    .startsWith(search.toLowerCase()) ||
+                  customer.name.toLowerCase().includes(search.toLowerCase())
+              )
+              .map((customer) => (
+                <Card
+                  key={customer.id}
+                  component="a"
+                  href={`/dashboard/customers/${customer.id}`}
+                  withBorder
+                  style={{
+                    borderRadius: "0px",
+                    borderLeft: "0px",
+                    borderRight: "0px",
+                    borderTop: "0px",
+                    backgroundColor:
+                      pathnames.length > 0 &&
+                      parseInt(pathnames.at(-1)!) === customer.id
+                        ? "#dee2e6"
+                        : "white",
+                  }}
+                  styles={{
+                    root: {
+                      ":hover": {
+                        bg: "#dee2e6",
+                      },
+                    },
+                  }}
+                  px={30}
+                  h={75}
+                >
+                  <Stack>
+                    <Group>
+                      <Text c={"gray"} size="sm">
+                        {upperFirst(customer.phone)}
+                      </Text>
+                      <Text c={"gray"} size="sm">
+                        {upperFirst(customer.email.toLowerCase())}
+                      </Text>
+                      <Text c={"gray"} size="sm">
+                        {upperFirst(customer.address)}
+                      </Text>
+                    </Group>
+                    <Group mt={-20}>
+                      <Text>{upperFirst(customer.name)}</Text>
+                    </Group>
+                  </Stack>
+                </Card>
+              ))}
+        </ScrollArea>
+        <Divider orientation="vertical" mx={2} />
+        <ScrollArea h={"70vh"} w={"65%"}>
+          <Outlet
+            context={{
+              customer: customers?.find(
+                (customer) => customer.id === parseInt(pathnames.at(-1)!)
+              ),
+            }}
           />
-        </>
-      ) : (
-        <Outlet context={{customers}} />
-      )}
-    </Card>
+        </ScrollArea>
+      </Flex>
+    </>
   );
 }

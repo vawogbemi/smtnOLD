@@ -15,13 +15,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return redirect(formData.get("reference") as string);
 };
 
-function InputWithButton(props: TextInputProps) {
+export function InputWithButton(props: TextInputProps) {
   const theme = useMantineTheme();
 
   return (
     <TextInput
       radius="xl"
-      size="md"
+      size="lg"
       placeholder="Tracking Number"
       mt={{ base: 100, sm: 100 }}
       rightSectionWidth={42}
@@ -64,7 +64,7 @@ export default function Tracking() {
         onSubmit={form.onSubmit((values) => submit(values, { method: "post" }))}
       >
         <InputWithButton
-          w={{ md: 900 }}
+          w={{ sm: 700, md: 900 }}
           mx={"auto"}
           {...form.getInputProps("reference")}
         />

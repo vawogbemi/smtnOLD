@@ -54,7 +54,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const width = parseInt(formData.get("width") as string);
       const height = parseInt(formData.get("height") as string);
 
-      const volume = (length * width * height) / 366;
+      const volume = Math.ceil((length * width * height) / 366);
 
       const weight = Math.max(measured_weight, volume);
 

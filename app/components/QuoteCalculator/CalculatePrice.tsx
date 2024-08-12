@@ -6,7 +6,7 @@ type Office = {
   clearance_currency: string | null;
   divisor: number;
   rates: number[];
-  clearance: number[] | null;
+  clearance: { type: string; amount: number }[] | null;
 };
 
 const offices: Office[] = [
@@ -18,7 +18,18 @@ const offices: Office[] = [
     clearance_currency: "$",
     divisor: 10,
     rates: [6000, 5600, 5600, 5600, 5600, 5600, 5600, 5600, 5600, 5500],
-    clearance: [20, 2, 2, 2, 2, 2, 2, 2, 2, 1.5],
+    clearance: [
+      { type: "flat", amount: 20 },
+      { type: "rate", amount: 2 },
+      { type: "rate", amount: 2 },
+      { type: "rate", amount: 2 },
+      { type: "rate", amount: 2 },
+      { type: "rate", amount: 2 },
+      { type: "rate", amount: 2 },
+      { type: "rate", amount: 2 },
+      { type: "rate", amount: 2 },
+      { type: "rate", amount: 1.5 },
+    ],
   },
   {
     from: "toronto",
@@ -42,33 +53,34 @@ const offices: Office[] = [
   },
 ];
 
-
 export function CalculatePriceAir(from: string, to: string, weight: number) {
   const office = offices.find(
     (office) =>
       office.from === from && office.to === to && office.method === "air"
   );
   if (!office) {
-    return null;
+    return { price: "Not available yet", clearance: "Not available yet" };
   }
 
   const rate = office.rates.at(
-    Math.min(Math.floor(weight / office.divisor) - 1, office.rates.length - 1)
+    Math.min(Math.floor(weight / office.divisor), office.rates.length - 1)
   );
+
   const clearance =
     office.clearance &&
     office.clearance.at(
-      Math.min(
-        Math.floor(weight / office.divisor) - 1,
-        office.clearance.length - 1
-      )
+      Math.min(Math.floor(weight / office.divisor), office.clearance.length - 1)
     );
 
   return {
     price: `${office.currency}${weight * rate!}`,
     clearance:
       office.clearance &&
-      `${office.clearance_currency}${clearance && weight * clearance}`,
+      `${office.clearance_currency}${
+        clearance!.type === "flat"
+          ? clearance!.amount
+          : weight * clearance!.amount
+      }`,
   };
 }
 
@@ -82,10 +94,10 @@ export function CalculatePriceOcean(
     (office) =>
       office.from === from && office.to === to && office.method === "ocean"
   );
+
   if (!office) {
-    return null;
+    return { price: "Not available yet", clearance: "Not available yet" };
   }
-  console.log(office);
 
   return {
     price: `${office.currency}${
@@ -94,7 +106,8 @@ export function CalculatePriceOcean(
     clearance:
       office.clearance &&
       `${office.clearance_currency}${
-        small * office.clearance.at(0)! + large * office.clearance.at(1)!
+        small * office.clearance.at(0)!.amount! +
+        large * office.clearance.at(1)!.amount!
       }`,
   };
 }

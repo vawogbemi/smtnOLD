@@ -108,7 +108,7 @@ export function QuoteCalculator(props: {
                   { value: "toronto", label: "Toronto" },
                 ]}
                 value={from ? from.value : undefined}
-                onChange={(_value, option) => setFrom(option)}
+                onChange={(_value, option) => option.value === to?.value ? (setTo(from), setFrom(option)) : setFrom(option)}
               ></Select>
               <Select
                 w={{ xs: "100%", md: "30%" }}
@@ -126,7 +126,7 @@ export function QuoteCalculator(props: {
                   { value: "toronto", label: "Toronto" },
                 ]}
                 value={to ? to.value : undefined}
-                onChange={(_value, option) => setTo(option)}
+                onChange={(_value, option) => option.value === from?.value ? (setFrom(to), setTo(option)) : setTo(option)}
               ></Select>
               <Select
                 w={{ xs: "100%", md: "30%" }}
@@ -201,7 +201,7 @@ export function QuoteCalculator(props: {
             </Center>
             {data && (
               <Group mt={10}>
-                <Title order={5}>Price</Title>
+                <Title order={5}>Shipping</Title>
                 <Text>{data.price}</Text>
                 <Title order={5}>Clearance</Title>
                 <Text>{data.clearance}</Text>

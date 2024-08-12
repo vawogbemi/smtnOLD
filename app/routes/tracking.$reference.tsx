@@ -19,7 +19,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   const { data: references } = await supabase
     .from("references")
-    .select("*, forms (name, from, to), shipments (status, last_updated)")
+    .select("*, shipments (*)")
     .eq("id", params.reference!);
 
   if (references && references?.length > 0) {
@@ -32,31 +32,32 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 };
 
 type Reference = {
-  id: number;
-  amount_paid: number;
-  boxes: number | null;
-  created_at: string;
-  customer_3: number | null;
-  customer_4: number | null;
-  customer_5: number | null;
-  delivery: boolean;
-  description: string;
-  form: number;
-  notes: string;
-  paid: boolean;
-  received: boolean;
-  receiver: number | null;
-  sender: number | null;
-  shipment: number;
-  total_weight: number;
-  forms: {
-    name: string;
-    from: string;
-    to: string;
-  } | null;
+  created_at: string
+  customer_3: number | null
+  customer_4: number | null
+  customer_5: number | null
+  delivery: number | null
+  description: string
+  id: number
+  large: number
+  notes: string
+  packages: number
+  paid: boolean
+  received: boolean
+  receiver: number
+  sender: number
+  shipment: number
+  small: number
+  total_weight: number
   shipments: {
-    status: number;
+    created_at: string;
+    from: string | null;
+    id: number;
     last_updated: string;
+    method: string | null;
+    packages: number;
+    status: number;
+    to: string | null;
   } | null;
 };
 
@@ -67,7 +68,7 @@ function TrackingReferenceCard(props: { reference: Reference | undefined }) {
 
   return (
     <Stack align="center" mt={75}>
-      <Card>
+      <Card bg={"gray.0"}>
         <Title order={1}>Reference</Title>
         <Title order={3} c={"gray"}>
           #{reference!.id}
@@ -77,12 +78,8 @@ function TrackingReferenceCard(props: { reference: Reference | undefined }) {
         Reference Details
       </Button>
       {details && (
-        <Card>
+        <Card style={{ borderRadius: 20 }}>
           <Grid mb={10}>
-            <Grid.Col span={4}>
-              <Title order={4}>Form</Title>
-              <Text>{`${reference?.forms?.name}`}</Text>
-            </Grid.Col>
             <Grid.Col span={4}>
               <Title order={4}>Shipment</Title>
               <Text>{`${reference?.shipment}`}</Text>
@@ -93,7 +90,7 @@ function TrackingReferenceCard(props: { reference: Reference | undefined }) {
             </Grid.Col>
             <Grid.Col span={4}>
               <Title order={4}>Boxes</Title>
-              <Text>{`${reference?.boxes}`}</Text>
+              <Text>{`${reference?.packages}`}</Text>
             </Grid.Col>
             <Grid.Col span={4}>
               <Title order={4}>Total Weight</Title>
@@ -134,7 +131,7 @@ function TrackingReferenceCard(props: { reference: Reference | undefined }) {
       >
         <Timeline.Item title="Label Created" bullet>
           <Text c="dimmed" size="sm">
-            {reference?.forms?.from}
+            {reference?.shipments?.from}
           </Text>
           <Text size="xs" mt={4}>
             {reference?.shipments?.status == 0 && (
@@ -169,7 +166,7 @@ function TrackingReferenceCard(props: { reference: Reference | undefined }) {
 
         <Timeline.Item title="Arrived" bullet>
           <Text c="dimmed" size="sm">
-            {reference?.forms?.to}
+            {reference?.shipments?.to}
           </Text>
           {reference?.shipments?.status == 3 && (
             <Text size="xs" mt={4}>

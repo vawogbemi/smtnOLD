@@ -1,10 +1,11 @@
 import { Accordion, Stack, Table, Title } from "@mantine/core";
+import Contact from "./contact";
 
 const offices = [
   {
     from: "Lagos",
     to: "Toronto",
-    method: "Air Cargo", 
+    method: "Air Cargo",
     currency: "₦",
     notes: "",
     rates: [
@@ -28,7 +29,7 @@ const offices = [
   {
     from: "Toronto",
     to: "Lagos",
-    method: "Air Cargo", 
+    method: "Air Cargo",
     currency: "$",
     notes: "",
     rates: [
@@ -77,7 +78,7 @@ const offices = [
   {
     from: "Toronto",
     to: "Lagos",
-    method: "Ocean", 
+    method: "Ocean",
     currency: "$",
     notes: "",
     rates: [
@@ -92,7 +93,7 @@ const offices = [
         clearance: "",
       },
     ],
-  }
+  },
 ];
 
 const items = offices.map((item) => (
@@ -109,7 +110,7 @@ const items = offices.map((item) => (
 ));
 
 function PricingTable(props: {
-  currency: string,
+  currency: string;
   elements: {
     range: string;
     rate: number;
@@ -141,9 +142,14 @@ function PricingTable(props: {
 
 export default function Pricing() {
   return (
-    <Stack maw={1000} mx={"auto"}>
-      <Title order={1}>Pricing</Title>
-      <Accordion defaultValue={'Lagos to Toronto | Air Cargo'}>{items}</Accordion>
+    <Stack>
+      <Stack maw={1000} w={"80%"} mx={"auto"}>
+        <Title order={1}>Pricing</Title>
+        <Accordion defaultValue={"Lagos to Toronto | Air Cargo"}>
+          {items}
+        </Accordion>
+      </Stack>
+      <Contact />
     </Stack>
   );
 }

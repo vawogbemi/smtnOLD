@@ -23,13 +23,14 @@ export function PhoneSelect({
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("");
   return (
+    <>
       <Flex>
         <Select
           data={data}
           value={country}
           onChange={(_value, option) => {
-            setCountry(option.value)
-            onChange(option.value + phone)
+            setCountry(option.value);
+            onChange(option.value + phone);
           }}
           allowDeselect={false}
           w={275}
@@ -41,15 +42,16 @@ export function PhoneSelect({
           label="Phone"
           value={phone}
           onChange={(e) => {
-            setPhone(e.target.value)
-            onChange(country + e.target.value)
+            setPhone(e.target.value);
+            onChange(country + e.target.value);
           }}
           onFocus={onFocus}
           onBlur={onBlur}
           w={"100%"}
           required
         />
-        {error && <Text size='md'>{error}</Text>}
+        {error && <Text size="md">{error}</Text>}
       </Flex>
+    </>
   );
 }

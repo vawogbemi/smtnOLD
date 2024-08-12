@@ -93,7 +93,7 @@ export default function App() {
   });
 
   return (
-    <AppShell header={{ height: 60 }} padding={"xl"}>
+    <AppShell header={{ height: 60 }} padding={"xl"} bg="gray.0">
       <AppShellHeader mb={"xl"}>
         <HeaderSimple />
       </AppShellHeader>

@@ -23,7 +23,6 @@ export function HeaderSimple() {
     ? [
         //{ link: "/dashboard/overview", label: "Overview" },
         { link: "/dashboard/shipments", label: "Shipments" },
-        { link: "/dashboard/references", label: "References"},
         { link: "/dashboard/customers", label: "Customers" },
         { link: "/logout", label: "Log Out" },
       ]
