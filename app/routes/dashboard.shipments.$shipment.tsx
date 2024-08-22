@@ -23,8 +23,8 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
- 
-  if (formData.get("action") === "paid"){
+
+  if (formData.get("action") === "paid") {
     const supabase = supabaseServiceRoleClient();
     const { error } = await supabase
       .from("references")
@@ -38,11 +38,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return null;
   }
 
-  if (formData.get("action") === "received"){
+  if (formData.get("action") === "received") {
     const supabase = supabaseServiceRoleClient();
     const { error } = await supabase
       .from("references")
-      .update({ received: parseInt(formData.get("received") as string) ? false : true })
+      .update({
+        received: parseInt(formData.get("received") as string) ? false : true,
+      })
       .eq("id", formData.get("id") as string)
       .single();
 
@@ -53,8 +55,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   return null;
-}
-
+};
 
 export default function Shipment() {
   const { references } = useLoaderData<typeof loader>();
@@ -71,6 +72,22 @@ export default function Shipment() {
           to: string;
         }
       | undefined;
+    references: {
+      sender: string;
+      receiver: string;
+      paid: string;
+      numbers: string;
+    }[];
+    setReferences: React.Dispatch<
+      React.SetStateAction<
+        {
+          sender: string;
+          receiver: string;
+          paid: string;
+          numbers: string;
+        }[]
+      >
+    >;
   }>();
 
   const data = (references ?? []).map((reference) => ({
@@ -84,12 +101,15 @@ export default function Shipment() {
       name: reference.receivers?.name ?? "Unknown",
     },
     description: reference.description,
+    notes: reference.notes,
     paid: reference.paid,
     received: reference.received,
     packages: reference.packages,
     total_weight: reference.total_weight,
     small: reference.small,
     large: reference.large,
+    shipping: reference.shipping,
+    clearance: reference.clearance,
   }));
 
   return (

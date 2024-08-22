@@ -13,10 +13,49 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { upperFirst } from "@mantine/hooks";
-import { json } from "@remix-run/node";
-import { Outlet, useLoaderData, useLocation } from "@remix-run/react";
-import { useState } from "react";
+import { ActionFunctionArgs, json } from "@remix-run/node";
+import {
+  Outlet,
+  useActionData,
+  useLoaderData,
+  useLocation,
+  useSubmit,
+} from "@remix-run/react";
+import { useEffect, useState } from "react";
 import { supabaseServiceRoleClient } from "~/api/server";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const supabase = supabaseServiceRoleClient();
+
+  if (formData.get("action") === "status") {
+    await supabase
+      .from("shipments")
+      .update({ status: parseInt(formData.get("status") as string) + 1 })
+      .eq("id", formData.get("shipment") as string);
+
+    /*if (parseInt(formData.get("status") as string) === 3) {
+      break;
+      //Send SMS
+    }*/
+    return undefined;
+  }
+
+  if (formData.get("action") === "manifest") {
+    const data = await supabase
+      .from("boxes")
+      .select(
+        "number, length, width, height, weight, references(id, shipment, paid, total_weight, shipping, clearance, description, notes, customers (name), receivers (name))"
+      )
+      .eq("references.shipment", parseInt(formData.get("shipment") as string));
+
+    return data;
+  }
+
+  return undefined;
+};
 
 export const loader = async () => {
   const supabase = supabaseServiceRoleClient();
@@ -24,7 +63,7 @@ export const loader = async () => {
   const { data: shipments, error: shipmentsError } = await supabase
     .from("shipments")
     .select("*")
-    .order("id", { ascending: true });
+    .order("id", { ascending: false });
 
   if (shipmentsError) {
     console.log(
@@ -45,6 +84,8 @@ function statusToString(status: number) {
       return "In Transit";
     case 3:
       return "Arrived";
+    case 4:
+      return "Notified";
     default:
       return "Unknown";
   }
@@ -52,6 +93,8 @@ function statusToString(status: number) {
 
 export default function Shipments() {
   const { shipments } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+
   const pathnames = useLocation().pathname.split("/");
 
   const [from, setFrom] = useState<ComboboxItem>({
@@ -66,6 +109,67 @@ export default function Shipments() {
     value: "all",
     label: "All",
   });
+
+  const submit = useSubmit();
+  const location = useLocation();
+  const currentShipmentId = parseInt(
+    location.pathname.split("/").at(-1) as string
+  );
+  const currentShipment = shipments?.find(
+    (shipment) => shipment.id == currentShipmentId
+  );
+  const [references, setReferences] = useState<
+    { sender: string; receiver: string; paid: string; numbers: string }[]
+  >([]);
+
+  useEffect(() => {
+    if (actionData && actionData.data) {
+      const doc = new jsPDF("landscape");
+
+      const tableHeaders = [
+        "Number",
+        "Sender",
+        "Receiver",
+        "Description",
+        "Notes",
+        "Total Weight",
+        "Paid",
+      ];
+      const tableData: (string | number)[][] = [];
+      const visited: number[] = [];
+      actionData.data.forEach((element) => {
+        if (visited.includes(element.references?.id ?? 0)) return;
+        visited.push(element.references?.id ?? 0);
+        const filteredData = actionData.data.filter(
+          (row) => row.references?.id === element.references?.id
+        );
+        tableData.push([
+          `${
+            filteredData.reduce((a, b) => (a.number < b.number ? a : b)).number
+          } - ${
+            filteredData.reduce((a, b) => (a.number > b.number ? a : b)).number
+          }`,
+          filteredData[0].references?.customers?.name ?? "Unknown",
+          filteredData[0].references?.receivers?.name ?? "Unknown",
+          filteredData[0].references?.description ?? "Unknown",
+          filteredData[0].references?.notes ?? "Unknown",
+          filteredData[0].references?.total_weight ?? "Unknown",
+          filteredData[0].references?.paid
+            ? ""
+            : `Shipping: ${filteredData[0].references?.shipping} Clearance: ${filteredData[0].references?.clearance}` ??
+              "Unknown",
+          filteredData[0].references?.total_weight ?? "Unknown",
+        ]);
+      });
+
+      autoTable(doc, {
+        head: [tableHeaders],
+        body: tableData,
+        styles: { minCellHeight: 20 },
+      });
+      doc.save(`manifest_${currentShipmentId}_.pdf`);
+    }
+  }, [actionData]);
 
   return (
     <>
@@ -120,10 +224,35 @@ export default function Shipments() {
           </Group>
           <Group>
             <Button>Toggle Delivery</Button>
-            <Button>Print Manifest</Button>
-            <Button>Send Sms</Button>
-            <Tooltip label="Next Statu">
-              <Button>Next Status</Button>
+            <Button
+              disabled={!currentShipmentId}
+              onClick={() => {
+                submit(
+                  { action: "manifest", shipment: currentShipmentId },
+                  { method: "post" }
+                );
+              }}
+            >
+              Print Manifest
+            </Button>
+            <Button disabled={!currentShipmentId}>Send Sms</Button>
+            <Tooltip label="Next Status">
+              <Button
+                disabled={!currentShipmentId}
+                onClick={() =>
+                  submit(
+                    {
+                      action: "status",
+                      shipment: currentShipmentId,
+                      status: currentShipment?.status ?? -2,
+                    },
+                    { method: "post" }
+                  )
+                }
+              >
+                Next Status:{" "}
+                {statusToString((currentShipment?.status ?? -2) + 1)}
+              </Button>
             </Tooltip>
           </Group>
         </Group>
@@ -200,6 +329,8 @@ export default function Shipments() {
               shipment: shipments?.find(
                 (shipment) => shipment.id === parseInt(pathnames.at(-1)!)
               ),
+              references,
+              setReferences,
             }}
           />
         </ScrollArea>
