@@ -17,7 +17,12 @@ import { json, redirect, useActionData, useSubmit } from "@remix-run/react";
 import { useState } from "react";
 import { InputWithButton } from "./tracking";
 import wave from "/wave.svg";
-import pic1 from "/pic1.jpg";
+import naira from "/naira.jpg";
+import tracking from "/tracking.jpg";
+import ghanabag from "/ghanabag.jpg";
+import confused from "/confused.jpg";
+import retha from "/rethaferguson.jpg";
+import ghana from "/ghana.jpg";
 import Contact from "./contact";
 import { IconArrowRight } from "@tabler/icons-react";
 import { QuoteCalculator } from "~/components/QuoteCalculator/QuoteCalculator";
@@ -38,7 +43,7 @@ export const meta: MetaFunction = () => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  
+
   if (formData.get("action") === "tracking") {
     return redirect(`tracking/${formData.get("reference") as string}`);
   }
@@ -135,24 +140,31 @@ export default function Index() {
         </Stack>
       </Tabs>
       <Image src={wave} style={{ marginTop: -20 }} />
-      <Flex wrap={"wrap"} px={{ md: 100 }}>
+      <Flex wrap={{md:"nowrap"}} px={{ md: 100 }}>
         <Stack>
           <Title order={1} mt={25} c={"gray.8"}>
             Your Premier Shipping Partner
           </Title>
           <Divider h={5} w={75} bg={"blue.5"} />
-          <Title mt={10} order={4} w={400} c={"gray.6"}>
-            SMTN specializes in international shipping services, with a primary
-            focus on routes connecting Nigeria, Canada, and the United Kingdom.{" "}
+          <Image
+            src={ghanabag}
+            w={{ xs: "100%", md: "80%" }}
+            mt={20}
+            style={{ borderRadius: 20 }}
+          />
+           <Title order={1} mt={25} c={"gray.8"}>
+            Est 2010
           </Title>
+          <Divider h={5} w={75} bg={"blue.5"} />
         </Stack>
-        <Image
-          src={pic1}
-          w={{ xs: 500, md: "45%" }}
-          mt={20}
-          ml={{ md: "auto" }}
-          style={{ borderRadius: 20 }}
-        />
+        <Stack ml={{ md: "auto" }}>
+          <Image src={ghana}ml={{ md: "auto" }}w={{ xs: "100%", md: "80%" }} style={{ borderRadius: 20 }} />
+          <Title order={1} mt={25} ml="auto" c={"gray.8"}>
+            We Deliver Value
+          </Title>
+          <Divider h={5} w={75} ml="auto" bg={"blue.5"} />
+          <Image src={retha} ml={{ md: "auto" }} w={{ xs: "100%", md: "80%" }} style={{ borderRadius: 20 }} />
+        </Stack>
       </Flex>
       <Flex
         w={"100%"}
@@ -190,24 +202,25 @@ export default function Index() {
         >
           <Card.Section>
             <Image
-              src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/images/bg-8.png"
-              height={160}
+              src={tracking}
+              height={300}
               alt="Norway"
             />
           </Card.Section>
 
           <Group justify="space-between" mt="md" mb="xs">
-            <Text fw={500}>Norway Fjord Adventures</Text>
+            <Text fw={500}>Track your package</Text>
           </Group>
 
           <Text size="sm" c="dimmed">
-            With Fjord Tours you can explore more of the magical fjord
-            landscapes with tours and activities on and around the fjords of
-            Norway
+            Stay informed with real-time updates on your shipment&apos;s
+            journey. Our advanced tracking system provides minute-by-minute
+            location data, estimated delivery times, and notifications at key
+            milestones.
           </Text>
 
-          <Button color="blue" fullWidth mt="md" radius="md">
-            Book classic tour now
+          <Button color="blue" fullWidth mt="md" radius="md" component="a" href="/tracking">
+            Track your package
           </Button>
         </Card>
         <Card
@@ -221,24 +234,24 @@ export default function Index() {
         >
           <Card.Section>
             <Image
-              src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/images/bg-8.png"
-              height={160}
+              src={naira}
+              height={300}
               alt="Norway"
             />
           </Card.Section>
 
           <Group justify="space-between" mt="md" mb="xs">
-            <Text fw={500}>Norway Fjord Adventures</Text>
+            <Text fw={500}>Competitive Pricing</Text>
           </Group>
 
           <Text size="sm" c="dimmed">
-            With Fjord Tours you can explore more of the magical fjord
-            landscapes with tours and activities on and around the fjords of
-            Norway
+            Discover our rates. Save more with our volume discounts. Our
+            competitive pricing ensures you get the best value for every
+            shipment, whether you&apos;re sending one package or a hundred.
           </Text>
 
-          <Button color="blue" fullWidth mt="md" radius="md">
-            Book classic tour now
+          <Button color="blue" fullWidth mt="md" radius="md" component="a" href="/pricing">
+            Explore our rates
           </Button>
         </Card>
 
@@ -253,24 +266,26 @@ export default function Index() {
         >
           <Card.Section>
             <Image
-              src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/images/bg-8.png"
-              height={160}
+              src={confused}
+              height={300}
               alt="Norway"
             />
           </Card.Section>
 
           <Group justify="space-between" mt="md" mb="xs">
-            <Text fw={500}>Norway Fjord Adventures</Text>
+            <Text fw={500}>Got Questions?</Text>
           </Group>
 
           <Text size="sm" c="dimmed">
-            With Fjord Tours you can explore more of the magical fjord
-            landscapes with tours and activities on and around the fjords of
-            Norway
+            Find answers to your most pressing questions on our comprehensive
+            FAQ page. We&apos;ve compiled a wealth of information covering
+            everything from shipping times and packaging guidelines to customs
+            regulations and insurance options. Can&apos;t find what you&apos;re
+            looking for?
           </Text>
 
-          <Button color="blue" fullWidth mt="md" radius="md">
-            Book classic tour now
+          <Button color="blue" fullWidth mt="md" radius="md" component="a" href="/faq">
+            Visit our FAQ page
           </Button>
         </Card>
       </Flex>
