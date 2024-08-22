@@ -9,6 +9,7 @@ import {
   TextInput,
   rem,
   keys,
+  Tooltip,
 } from "@mantine/core";
 import {
   IconSelector,
@@ -24,12 +25,15 @@ interface RowData {
   sender: { id: number; name: string };
   receiver: { id: number; name: string };
   description: string;
+  notes: string;
   paid: boolean;
   received: boolean;
   packages: number;
   total_weight: number;
   small: number;
   large: number;
+  shipping: number;
+  clearance: number;
 }
 
 interface ThProps {
@@ -73,79 +77,57 @@ function Row(props: { row: RowData; method: string }) {
   return (
     <Table.Tr>
       <Table.Td className={classes.th}>
-        <UnstyledButton
-          className={classes.control}
-          onClick={() => navigate(`/dashboard/references/${row.reference}`)}
-        >
-          {row.reference}
-        </UnstyledButton>
+        <Tooltip label={"Click here to view reference"}>
+          <UnstyledButton
+            className={classes.control}
+            onClick={() => navigate(`/dashboard/references/${row.reference}`)}
+          >
+            {row.reference}
+          </UnstyledButton>
+        </Tooltip>
       </Table.Td>
 
       <Table.Td className={classes.th}>
-        <UnstyledButton
-          className={classes.control}
-          onClick={() => navigate(`/dashboard/customers/${row.sender.id}`)}
-        >
-          {row.sender.name}
-        </UnstyledButton>
+        <Tooltip label={row.sender.name}>
+          <UnstyledButton
+            className={classes.control}
+            onClick={() => navigate(`/dashboard/customers/${row.sender.id}`)}
+          >
+            <Text truncate="end">{row.sender.name}</Text>
+          </UnstyledButton>
+        </Tooltip>
       </Table.Td>
 
       <Table.Td className={classes.th}>
-        <UnstyledButton
-          className={classes.control}
-          onClick={() => navigate(`/dashboard/customers/${row.receiver.id}`)}
-        >
-          {row.receiver.name}
-        </UnstyledButton>
+        <Tooltip label={row.receiver.name}>
+          <UnstyledButton
+            className={classes.control}
+            //onClick={() => navigate(`/dashboard/customers/${row.receiver.id}`)}
+          >
+            <Text truncate="end">{row.receiver.name}</Text>
+          </UnstyledButton>
+        </Tooltip>
       </Table.Td>
       <Table.Td className={classes.th}>
-        <UnstyledButton className={classes.control}>
-          <Text truncate="end">{row.description}</Text>
-        </UnstyledButton>
+        <Tooltip label={row.description}>
+          <UnstyledButton className={classes.control}>
+            <Text truncate="end">{row.description}</Text>
+          </UnstyledButton>
+        </Tooltip>
       </Table.Td>
-
       <Table.Td className={classes.th}>
-        <UnstyledButton
-          className={classes.control}
-          bg={paid ? "green" : "red"}
-          w={"90%"}
-          onClick={() => (
-            submit(
-              {
-                action: "paid",
-                paid: Number(row.paid),
-                id: row.reference,
-              },
-              { method: "post" }
-            ),
-            setPaid(!paid)
-          )}
-        ></UnstyledButton>
-      </Table.Td>
-
-      <Table.Td className={classes.th}>
-        <UnstyledButton
-          className={classes.control}
-          bg={received ? "green" : "red"}
-          w={"90%"}
-          onClick={() => (
-            submit(
-              {
-                action: "received",
-                paid: Number(row.received),
-                id: row.reference,
-              },
-              { method: "post" }
-            ),
-            setReceived(!received)
-          )}
-        ></UnstyledButton>
+        <Tooltip label={row.notes}>
+          <UnstyledButton className={classes.control}>
+            <Text truncate="end">{row.notes}</Text>
+          </UnstyledButton>
+        </Tooltip>
       </Table.Td>
       <Table.Td className={classes.th}>
         <UnstyledButton className={classes.control}>
           {row.packages}
         </UnstyledButton>
       </Table.Td>
+
       {(method === "air" || method == "all") && (
         <Table.Td className={classes.th}>
           <UnstyledButton className={classes.control}>
@@ -168,6 +150,58 @@ function Row(props: { row: RowData; method: string }) {
           </Table.Td>
         </>
       )}
+      <Table.Td className={classes.th}>
+        <UnstyledButton className={classes.control}>
+          <Text truncate="end">{row.shipping}</Text>
+        </UnstyledButton>
+      </Table.Td>
+      <Table.Td className={classes.th}>
+        <UnstyledButton className={classes.control}>
+          <Text truncate="end">{row.clearance}</Text>
+        </UnstyledButton>
+      </Table.Td>
+
+      <Table.Td className={classes.th}>
+        <Tooltip label={paid ? "Click to mark as unpaid" : "Click to mark as paid"}>
+        <UnstyledButton
+          className={classes.control}
+          bg={paid ? "green" : "red"}
+          w={"90%"}
+          onClick={() => (
+            submit(
+              {
+                action: "paid",
+                paid: Number(row.paid),
+                id: row.reference,
+              },
+              { method: "post" }
+            ),
+            setPaid(!paid)
+          )}
+        ></UnstyledButton>
+        </Tooltip>
+      </Table.Td>
+
+      <Table.Td className={classes.th}>
+        <Tooltip label={received ? "Click to mark as unreceived" : "Click to mark as received"}>
+        <UnstyledButton
+          className={classes.control}
+          bg={received ? "green" : "red"}
+          w={"90%"}
+          onClick={() => (
+            submit(
+              {
+                action: "received",
+                paid: Number(row.received),
+                id: row.reference,
+              },
+              { method: "post" }
+            ),
+            setReceived(!received)
+          )}
+        ></UnstyledButton>
+        </Tooltip>
+      </Table.Td>
     </Table.Tr>
   );
 }
@@ -313,18 +347,11 @@ export function ShipmentTable(props: { data: RowData[]; method: string }) {
               Description
             </Th>
             <Th
-              sorted={sortBy === "paid"}
+              sorted={sortBy === "notes"}
               reversed={reverseSortDirection}
-              onSort={() => setSorting("paid")}
+              onSort={() => setSorting("notes")}
             >
-              Paid
-            </Th>
-            <Th
-              sorted={sortBy === "received"}
-              reversed={reverseSortDirection}
-              onSort={() => setSorting("received")}
-            >
-              Received
+              Notes
             </Th>
             <Th
               sorted={sortBy === "packages"}
@@ -360,6 +387,34 @@ export function ShipmentTable(props: { data: RowData[]; method: string }) {
                 </Th>
               </>
             )}
+            <Th
+              sorted={sortBy === "shipping"}
+              reversed={reverseSortDirection}
+              onSort={() => setSorting("shipping")}
+            >
+              Shipping
+            </Th>
+            <Th
+              sorted={sortBy === "clearance"}
+              reversed={reverseSortDirection}
+              onSort={() => setSorting("clearance")}
+            >
+              Clearance
+            </Th>
+            <Th
+              sorted={sortBy === "paid"}
+              reversed={reverseSortDirection}
+              onSort={() => setSorting("paid")}
+            >
+              Paid
+            </Th>
+            <Th
+              sorted={sortBy === "received"}
+              reversed={reverseSortDirection}
+              onSort={() => setSorting("received")}
+            >
+              Received
+            </Th>
           </Table.Tr>
         </Table.Tbody>
         <Table.Tbody>
@@ -368,7 +423,7 @@ export function ShipmentTable(props: { data: RowData[]; method: string }) {
           ) : (
             <Table.Tr>
               <Table.Td
-                colSpan={method === "all" ? 10 : method == "air" ? 8 : 9}
+                colSpan={method === "all" ? 13 : method == "air" ? 11 : 12}
               >
                 <Text fw={500} ta="center">
                   Nothing found
