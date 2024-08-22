@@ -22,6 +22,8 @@ export type FormType = UseFormReturnType<
     }[];
     small: number;
     large: number;
+    shipping: number;
+    clearance: number;
     paid: boolean;
   },
   (values: {
@@ -39,6 +41,8 @@ export type FormType = UseFormReturnType<
     }[];
     small: number;
     large: number;
+    shipping: number;
+    clearance: number;
     paid: boolean;
   }) => {
     phone: string;
@@ -55,6 +59,8 @@ export type FormType = UseFormReturnType<
     }[];
     small: number;
     large: number;
+    shipping: number;
+    clearance: number;
     paid: boolean;
   }
 >;
@@ -86,6 +92,8 @@ export function NewReferenceForm(props: {
       boxes: [{ length: 1, width: 1, height: 1, weight: 1 }],
       large: 0,
       small: 0,
+      shipping: 0,
+      clearance: 0,
       paid: false,
     },
   });

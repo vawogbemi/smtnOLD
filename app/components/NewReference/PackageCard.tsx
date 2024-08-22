@@ -15,6 +15,7 @@ import {
   CalculatePriceAir,
   CalculatePriceOcean,
 } from "../QuoteCalculator/CalculatePrice";
+import { useEffect } from "react";
 
 export function PackageCard(props: {
   form: FormType;
@@ -22,7 +23,7 @@ export function PackageCard(props: {
   states: {
     from: ComboboxItem | undefined;
     to: ComboboxItem | undefined;
-    method: ComboboxItem | undefined; 
+    method: ComboboxItem | undefined;
     total_weight: number;
   };
   setStates: {
@@ -34,8 +35,43 @@ export function PackageCard(props: {
 }) {
   const { form, setValue, states, setStates } = props;
   const { from, to, method, total_weight } = states;
-  const { setFrom, setTo, setMethod, setTotalWeight} = setStates;
+  const { setFrom, setTo, setMethod, setTotalWeight } = setStates;
 
+  useEffect(() => {
+    form.setFieldValue(
+      "shipping",
+      parseInt(
+        method?.value === "air"
+          ? CalculatePriceAir(
+              from?.value ?? "",
+              to?.value ?? "",
+              total_weight
+            )?.price.slice(1)
+          : CalculatePriceOcean(
+              from?.value ?? "",
+              to?.value ?? "",
+              form.values.small,
+              form.values.large
+            ).price.slice(1)
+      )
+    );
+
+    form.setFieldValue(
+      "clearance",
+      parseInt(
+        (method?.value === "air"
+          ? CalculatePriceAir(from?.value ?? "", to?.value ?? "", total_weight)
+              ?.clearance ?? "$0"
+          : CalculatePriceOcean(
+              from?.value ?? "",
+              to?.value ?? "",
+              form.values.small,
+              form.values.large
+            ).clearance ?? "$0"
+        ).slice(1)
+      )
+    );
+  }, [method, from, to, total_weight, form.values.small, form.values.large]);
 
   return (
     <Stack>
@@ -109,6 +145,8 @@ export function PackageCard(props: {
           <Boxes
             form={form}
             total_weight={total_weight}
+            from={from}
+            to={to}
             setTotalWeight={setTotalWeight}
           />
         ) : (
@@ -117,55 +155,21 @@ export function PackageCard(props: {
         <Title order={4} mt={10}>
           Payment Information
         </Title>
-        {method?.value === "air" ? (
-          <Group>
-            <Text fw={500}>
-              Shipping:{" "}
-              {
-                CalculatePriceAir(
-                  from?.value ?? "",
-                  to?.value ?? "",
-                  total_weight
-                )?.price
-              }
-            </Text>
-            <Text fw={500}>
-              Clearance:{" "}
-              {
-                CalculatePriceAir(
-                  from?.value ?? "",
-                  to?.value ?? "",
-                  total_weight
-                )?.clearance
-              }
-            </Text>
-          </Group>
-        ) : (
-          <Group>
-            <Text fw={500}>
-              Shipping:{" "}
-              {
-                CalculatePriceOcean(
-                  from?.value ?? "",
-                  to?.value ?? "",
-                  form.values.small ?? 0,
-                  form.values.large ?? 0
-                )?.price
-              }
-            </Text>
-            <Text fw={500}>
-              Clearance:{" "}
-              {
-                CalculatePriceOcean(
-                  from?.value ?? "",
-                  to?.value ?? "",
-                  form.values.small ?? 0,
-                  form.values.large ?? 0
-                )?.clearance
-              }
-            </Text>
-          </Group>
-        )}
+        <Group>
+          <NumberInput
+            label="Shipping"
+            min={1}
+            decimalScale={0}
+            {...form.getInputProps("shipping")}
+          ></NumberInput>
+          <NumberInput
+            label="Clearance"
+            min={1}
+            decimalScale={0}
+            {...form.getInputProps("clearance")}
+          ></NumberInput>
+        </Group>
+
         <Checkbox
           mt="md"
           label="Paid"
@@ -189,12 +193,36 @@ export function PackageCard(props: {
   );
 }
 
+function boxesOnChange(
+  form: FormType,
+  index: number,
+  total_weight: number,
+  from: ComboboxItem | undefined,
+  to: ComboboxItem | undefined,
+  setTotalWeight: React.Dispatch<React.SetStateAction<number>>
+) {
+  const newWeight = Math.ceil(
+    (form.getTransformedValues()["boxes"][index]["length"] *
+      form.getTransformedValues()["boxes"][index]["width"] *
+      form.getTransformedValues()["boxes"][index]["height"]) /
+      366
+  );
+
+  setTotalWeight(
+    total_weight - Number(form.values.boxes[index].weight) + newWeight
+  );
+
+  form.setFieldValue(`boxes.${index}.weight`, newWeight);
+}
+
 function Boxes(props: {
   form: FormType;
   total_weight: number;
+  from: ComboboxItem | undefined;
+  to: ComboboxItem | undefined;
   setTotalWeight: React.Dispatch<React.SetStateAction<number>>;
 }) {
-  const { form, total_weight, setTotalWeight } = props;
+  const { form, total_weight, from, to, setTotalWeight } = props;
 
   return (
     <>
@@ -243,16 +271,13 @@ function Boxes(props: {
                     form.isTouched(`boxes.${index}.width`) &&
                     form.isTouched(`boxes.${index}.height`)
                   ) {
-                    form.setFieldValue(
-                      `boxes.${index}.weight`,
-                      Math.ceil(
-                        (form.getTransformedValues()["boxes"][index]["length"] *
-                          form.getTransformedValues()["boxes"][index]["width"] *
-                          form.getTransformedValues()["boxes"][index][
-                            "height"
-                          ]) /
-                          366
-                      )
+                    boxesOnChange(
+                      form,
+                      index,
+                      total_weight,
+                      from,
+                      to,
+                      setTotalWeight
                     );
                   }
                 }}
@@ -269,16 +294,13 @@ function Boxes(props: {
                     form.isTouched(`boxes.${index}.length`) &&
                     form.isTouched(`boxes.${index}.height`)
                   ) {
-                    form.setFieldValue(
-                      `boxes.${index}.weight`,
-                      Math.ceil(
-                        (form.getTransformedValues()["boxes"][index]["length"] *
-                          form.getTransformedValues()["boxes"][index]["width"] *
-                          form.getTransformedValues()["boxes"][index][
-                            "height"
-                          ]) /
-                          366
-                      )
+                    boxesOnChange(
+                      form,
+                      index,
+                      total_weight,
+                      from,
+                      to,
+                      setTotalWeight
                     );
                   }
                 }}
@@ -295,16 +317,13 @@ function Boxes(props: {
                     form.isTouched(`boxes.${index}.length`) &&
                     form.isTouched(`boxes.${index}.width`)
                   ) {
-                    form.setFieldValue(
-                      `boxes.${index}.weight`,
-                      Math.ceil(
-                        (form.getTransformedValues()["boxes"][index]["length"] *
-                          form.getTransformedValues()["boxes"][index]["width"] *
-                          form.getTransformedValues()["boxes"][index][
-                            "height"
-                          ]) /
-                          366
-                      )
+                    boxesOnChange(
+                      form,
+                      index,
+                      total_weight,
+                      from,
+                      to,
+                      setTotalWeight
                     );
                   }
                 }}
@@ -322,6 +341,7 @@ function Boxes(props: {
                     Number(form.values.boxes[index].weight) +
                     Number(val)
                 );
+
                 form.setFieldValue(`boxes.${index}.weight`, val);
               }}
             />
