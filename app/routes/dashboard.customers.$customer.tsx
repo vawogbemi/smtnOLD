@@ -10,7 +10,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     .from("references")
     .select("*, customers (id, name), receivers (id, name)")
     .eq("sender", params.customer!)
-    .order("id", { ascending: true });
+    .order("id", { ascending: false });
 
   if (referencesError) {
     console.error(
@@ -46,6 +46,7 @@ export default function Shipment() {
       id: reference.receivers?.id ?? 0,
       name: reference.receivers?.name ?? "Unknown",
     },
+    notes: reference.notes,
     description: reference.description,
     paid: reference.paid,
     received: reference.received,
@@ -53,9 +54,10 @@ export default function Shipment() {
     total_weight: reference.total_weight,
     small: reference.small,
     large: reference.large,
+    shipping: reference.shipping,
+    clearance: reference.clearance,
   }));
 
-  console.log(customer);
   return (
     <>
       {customer && data ? (

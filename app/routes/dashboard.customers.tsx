@@ -9,6 +9,7 @@ import {
   Stack,
   Text,
   Title,
+  Tooltip,
 } from "@mantine/core";
 import { upperFirst } from "@mantine/hooks";
 import { json } from "@remix-run/node";
@@ -95,23 +96,18 @@ export default function Shipments() {
                   }}
                   px={30}
                   h={75}
-                >
+                ><Tooltip label={`${customer.email.toLowerCase()} ${customer.address}`}>
                   <Stack>
                     <Group>
                       <Text c={"gray"} size="sm">
                         {upperFirst(customer.phone)}
-                      </Text>
-                      <Text c={"gray"} size="sm">
-                        {upperFirst(customer.email.toLowerCase())}
-                      </Text>
-                      <Text c={"gray"} size="sm">
-                        {upperFirst(customer.address)}
                       </Text>
                     </Group>
                     <Group mt={-20}>
                       <Text>{upperFirst(customer.name)}</Text>
                     </Group>
                   </Stack>
+                  </Tooltip>
                 </Card>
               ))}
         </ScrollArea>
