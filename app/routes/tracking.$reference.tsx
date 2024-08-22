@@ -13,13 +13,14 @@ import {
 } from "@mantine/core";
 import { IconCheck, IconX } from "@tabler/icons-react";
 import { useState } from "react";
+import { upperFirst } from "@mantine/hooks";
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const supabase = supabaseServiceRoleClient();
 
   const { data: references } = await supabase
     .from("references")
-    .select("*, shipments (*)")
+    .select("*, shipments (*), receivers (*)")
     .eq("id", params.reference!);
 
   if (references && references?.length > 0) {
@@ -31,33 +32,35 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return redirect("/404");
 };
 
-type Reference = {
-  created_at: string
-  customer_3: number | null
-  customer_4: number | null
-  customer_5: number | null
-  delivery: number | null
-  description: string
-  id: number
-  large: number
-  notes: string
-  packages: number
-  paid: boolean
-  received: boolean
-  receiver: number
-  sender: number
-  shipment: number
-  small: number
-  total_weight: number
+export type Reference = {
+  clearance: number;
+  created_at: string;
+  delivery: number | null;
+  description: string;
+  id: number;
+  large: number;
+  notes: string;
+  packages: number;
+  paid: boolean;
+  received: boolean;
+  receiver: number | null;
+  sender: number;
+  shipment: number;
+  shipping: number;
+  small: number;
+  total_weight: number;
   shipments: {
-    created_at: string;
-    from: string | null;
-    id: number;
+    from: string;
     last_updated: string;
-    method: string | null;
-    packages: number;
     status: number;
-    to: string | null;
+    to: string;
+  } | null;
+  receivers: {
+    created_at: string;
+    customer: number | null;
+    id: number;
+    name: string;
+    phone: string;
   } | null;
 };
 
@@ -80,14 +83,6 @@ function TrackingReferenceCard(props: { reference: Reference | undefined }) {
       {details && (
         <Card style={{ borderRadius: 20 }}>
           <Grid mb={10}>
-            <Grid.Col span={4}>
-              <Title order={4}>Shipment</Title>
-              <Text>{`${reference?.shipment}`}</Text>
-            </Grid.Col>
-            <Grid.Col span={4}>
-              <Title order={4}>Created</Title>
-              <Text> {new Date(reference!.created_at).toLocaleString()}</Text>
-            </Grid.Col>
             <Grid.Col span={4}>
               <Title order={4}>Boxes</Title>
               <Text>{`${reference?.packages}`}</Text>
@@ -131,7 +126,7 @@ function TrackingReferenceCard(props: { reference: Reference | undefined }) {
       >
         <Timeline.Item title="Label Created" bullet>
           <Text c="dimmed" size="sm">
-            {reference?.shipments?.from}
+            {upperFirst(reference?.shipments?.from ?? "Unknown")}
           </Text>
           <Text size="xs" mt={4}>
             {reference?.shipments?.status == 0 && (
@@ -166,7 +161,7 @@ function TrackingReferenceCard(props: { reference: Reference | undefined }) {
 
         <Timeline.Item title="Arrived" bullet>
           <Text c="dimmed" size="sm">
-            {reference?.shipments?.to}
+            {upperFirst(reference?.shipments?.to ?? "Unknown")}
           </Text>
           {reference?.shipments?.status == 3 && (
             <Text size="xs" mt={4}>
@@ -198,6 +193,7 @@ function TrackingReferenceCard(props: { reference: Reference | undefined }) {
 export default function TrackingReference() {
   const { reference } = useLoaderData<typeof loader>();
   const location = useLocation();
+
   return location.pathname.split("/").length == 3 ? (
     <TrackingReferenceCard reference={reference} />
   ) : (
