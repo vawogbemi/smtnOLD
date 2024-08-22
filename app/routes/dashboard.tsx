@@ -134,7 +134,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           : 0,
         formData.get("paid") === "true",
         customer!.id,
-        receiver!.at(0)!.id
+        receiver!.at(0)!.id,
+        parseInt(formData.get("shipping") as string),
+        parseInt(formData.get("clearance") as string),
       );
 
       const reference = references?.at(0);
@@ -214,7 +216,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           : 0,
         formData.get("paid") === "true",
         customer!.id,
-        receiver!.at(0)!.id
+        receiver!.at(0)!.id,
+        parseInt(formData.get("shipping") as string),
+        parseInt(formData.get("clearance") as string),
       );
 
       const reference = references?.at(0);
@@ -289,8 +293,6 @@ export default function Dashboard() {
   const [createReference, toggleCreateReference] = useState(false);
   const actionData = useActionData<typeof action>();
   const location = useLocation();
-
-
 
 
   return user ? (
