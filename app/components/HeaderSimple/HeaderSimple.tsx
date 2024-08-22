@@ -19,7 +19,7 @@ import { useLocation } from "@remix-run/react";
 export function HeaderSimple() {
   const location = useLocation();
 
-  const links = location.pathname.startsWith("/dashboard")
+  const links = location.pathname.toLowerCase().startsWith("/dashboard")
     ? [
         //{ link: "/dashboard/overview", label: "Overview" },
         { link: "/dashboard/shipments", label: "Shipments" },
