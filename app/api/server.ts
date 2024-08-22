@@ -84,7 +84,9 @@ export async function createReference(
   large: number,
   paid: boolean,
   sender: number,
-  receiver: number
+  receiver: number,
+  shipping:number,
+  clearance:number,
 ) {
   const supabase = supabaseServiceRoleClient();
 
@@ -101,6 +103,8 @@ export async function createReference(
       paid: paid,
       sender: sender,
       receiver: receiver,
+      shipping: shipping ?? 0,
+      clearance: clearance ?? 0,
     })
     .select("*");
 
@@ -109,4 +113,9 @@ export async function createReference(
   }
 
   return data;
+}
+
+export async function sendBatchSms(){
+  return
+  return twilioClient.messages
 }
