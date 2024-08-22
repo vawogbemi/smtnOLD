@@ -44,6 +44,9 @@ dependencies:
   jspdf:
     specifier: ^2.5.1
     version: 2.5.1
+  jspdf-autotable:
+    specifier: ^3.8.2
+    version: 3.8.2(jspdf@2.5.1)
   react:
     specifier: ^18.3.1
     version: 18.3.1
@@ -4310,6 +4313,14 @@ packages:
       lodash.once: 4.1.1
       ms: 2.1.3
       semver: 7.6.2
+    dev: false
+
+  /jspdf-autotable@3.8.2(jspdf@2.5.1):
+    resolution: {integrity: sha512-zW1ix99/mtR4MbIni7IqvrpfHmuTaICl6iv6wqjRN86Nxtwaw/QtOeDbpXqYSzHIJK9JvgtLM283sc5x+ipkJg==}
+    peerDependencies:
+      jspdf: ^2.5.1
+    dependencies:
+      jspdf: 2.5.1
     dev: false
 
   /jspdf@2.5.1:

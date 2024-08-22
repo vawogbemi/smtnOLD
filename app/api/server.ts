@@ -116,6 +116,5 @@ export async function createReference(
 }
 
 export async function sendBatchSms(){
-  return
   return twilioClient.messages
 }
