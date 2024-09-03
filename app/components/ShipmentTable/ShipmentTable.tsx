@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import {
   Table,
   ScrollArea,
@@ -10,12 +10,18 @@ import {
   rem,
   keys,
   Tooltip,
+  Flex,
+  ActionIcon,
+  NumberInput,
 } from "@mantine/core";
 import {
   IconSelector,
   IconChevronDown,
   IconChevronUp,
   IconSearch,
+  IconCheck,
+  IconX,
+  IconDotsVertical,
 } from "@tabler/icons-react";
 import classes from "./ShipmentTable.module.css";
 import { useNavigate, useSubmit } from "@remix-run/react";
@@ -71,8 +77,61 @@ function Row(props: { row: RowData; method: string }) {
   const navigate = useNavigate();
   const submit = useSubmit();
 
-  const [paid, setPaid] = useState(row.paid);
-  const [received, setReceived] = useState(row.received);
+  const reducer = (
+    state: {
+      edit: boolean;
+      description: string;
+      notes: string;
+      shipping: number;
+      clearance: number;
+      paid: boolean;
+      received: boolean;
+    },
+    action: { type: string; value?: string }
+  ) => {
+    switch (action.type) {
+      case "submit":
+        return {
+          ...state,
+          edit: false,
+        };
+      case "edit":
+        return {
+          edit: !state.edit,
+          description: row.description,
+          notes: row.notes,
+          shipping: row.shipping,
+          clearance: row.clearance,
+          paid: row.paid,
+          received: row.received,
+        };
+      case "description":
+        return { ...state, description: action.value ?? "" };
+      case "notes":
+        return { ...state, notes: action.value ?? "" };
+      case "shipping":
+        return { ...state, shipping: Number(action.value ?? 0) };
+      case "clearance":
+        console.log(action.value);
+        return { ...state, clearance: Number(action.value ?? 0) };
+      case "paid":
+        return { ...state, paid: !state.paid };
+      case "received":
+        return { ...state, received: !state.received };
+      default:
+        return state;
+    }
+  };
+
+  const [state, dispatch] = useReducer(reducer, {
+    edit: false,
+    description: row.description,
+    notes: row.notes,
+    shipping: row.shipping,
+    clearance: row.clearance,
+    paid: row.paid,
+    received: row.received,
+  });
 
   return (
     <Table.Tr>
@@ -100,25 +159,40 @@ function Row(props: { row: RowData; method: string }) {
 
       <Table.Td className={classes.th}>
         <Tooltip label={row.receiver.name}>
-          <UnstyledButton
-            className={classes.control}
-            //onClick={() => navigate(`/dashboard/customers/${row.receiver.id}`)}
-          >
+          <UnstyledButton className={classes.control}>
             <Text truncate="end">{row.receiver.name}</Text>
           </UnstyledButton>
         </Tooltip>
       </Table.Td>
       <Table.Td className={classes.th}>
-        <Tooltip label={row.description}>
+        <Tooltip label={state.description}>
           <UnstyledButton className={classes.control}>
-            <Text truncate="end">{row.description}</Text>
+            {state.edit ? (
+              <TextInput
+                value={state.description}
+                onChange={(e) =>
+                  dispatch({ type: "description", value: e.target.value })
+                }
+              />
+            ) : (
+              <Text truncate="end">{state.description}</Text>
+            )}
           </UnstyledButton>
         </Tooltip>
       </Table.Td>
       <Table.Td className={classes.th}>
-        <Tooltip label={row.notes}>
+        <Tooltip label={state.notes}>
           <UnstyledButton className={classes.control}>
-            <Text truncate="end">{row.notes}</Text>
+            {state.edit ? (
+              <TextInput
+                value={state.notes}
+                onChange={(e) =>
+                  dispatch({ type: "notes", value: e.target.value })
+                }
+              />
+            ) : (
+              <Text truncate="end">{row.notes}</Text>
+            )}
           </UnstyledButton>
         </Tooltip>
       </Table.Td>
@@ -128,14 +202,14 @@ function Row(props: { row: RowData; method: string }) {
         </UnstyledButton>
       </Table.Td>
 
-      {(method === "air" || method == "all") && (
+      {method === "air" && (
         <Table.Td className={classes.th}>
           <UnstyledButton className={classes.control}>
             {row.total_weight}
           </UnstyledButton>
         </Table.Td>
       )}
-      {(method === "ocean" || method == "all") && (
+      {method === "ocean" && (
         <>
           <Table.Td className={classes.th}>
             <UnstyledButton className={classes.control}>
@@ -152,56 +226,129 @@ function Row(props: { row: RowData; method: string }) {
       )}
       <Table.Td className={classes.th}>
         <UnstyledButton className={classes.control}>
-          <Text truncate="end">{row.shipping}</Text>
+          {state.edit ? (
+            <NumberInput
+              rightSection={<></>}
+              value={state.shipping}
+              onChange={(e) =>
+                dispatch({ type: "shipping", value: e.toString() })
+              }
+            />
+          ) : (
+            <Text truncate="end">{state.shipping}</Text>
+          )}
         </UnstyledButton>
       </Table.Td>
       <Table.Td className={classes.th}>
         <UnstyledButton className={classes.control}>
-          <Text truncate="end">{row.clearance}</Text>
+          {state.edit ? (
+            <NumberInput
+              rightSection={<></>}
+              value={state.clearance}
+              onChange={(e) =>
+                dispatch({ type: "clearance", value: e.toString() })
+              }
+            />
+          ) : (
+            <Text truncate="end">{state.clearance}</Text>
+          )}
         </UnstyledButton>
       </Table.Td>
 
       <Table.Td className={classes.th}>
-        <Tooltip label={paid ? "Click to mark as unpaid" : "Click to mark as paid"}>
-        <UnstyledButton
-          className={classes.control}
-          bg={paid ? "green" : "red"}
-          w={"90%"}
-          onClick={() => (
-            submit(
-              {
-                action: "paid",
-                paid: Number(row.paid),
-                id: row.reference,
-              },
-              { method: "post" }
-            ),
-            setPaid(!paid)
-          )}
-        ></UnstyledButton>
+        <Tooltip
+          label={
+            state.paid ? "Click to mark as unpaid" : "Click to mark as paid"
+          }
+        >
+          <UnstyledButton
+            className={classes.control}
+            bg={state.paid ? "green" : "red"}
+            w={"90%"}
+            onClick={() => (
+              submit(
+                {
+                  action: "paid",
+                  paid: Number(state.paid),
+                  id: row.reference,
+                },
+                { method: "post" }
+              ),
+              dispatch({ type: "paid" })
+            )}
+          ></UnstyledButton>
         </Tooltip>
       </Table.Td>
 
       <Table.Td className={classes.th}>
-        <Tooltip label={received ? "Click to mark as unreceived" : "Click to mark as received"}>
-        <UnstyledButton
-          className={classes.control}
-          bg={received ? "green" : "red"}
-          w={"90%"}
-          onClick={() => (
-            submit(
-              {
-                action: "received",
-                paid: Number(row.received),
-                id: row.reference,
-              },
-              { method: "post" }
-            ),
-            setReceived(!received)
-          )}
-        ></UnstyledButton>
+        <Tooltip
+          label={
+            state.paid
+              ? "Click to mark as unreceived"
+              : "Click to mark as received"
+          }
+        >
+          <UnstyledButton
+            className={classes.control}
+            bg={state.received ? "green" : "red"}
+            w={"90%"}
+            onClick={() => (
+              submit(
+                {
+                  action: "received",
+                  received: Number(state.received),
+                  id: row.reference,
+                },
+                { method: "post" }
+              ),
+              dispatch({ type: "received" })
+            )}
+          ></UnstyledButton>
         </Tooltip>
       </Table.Td>
+      {state.edit ? (
+        <Table.Td>
+          <Flex>
+            <Tooltip label="Cancel">
+              <ActionIcon
+                bg={"red"}
+                mr={5}
+                onClick={() => dispatch({ type: "edit" })}
+              >
+                <IconX />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Save">
+              <ActionIcon
+                bg={"green"}
+                onClick={() => (
+                  submit(
+                    {
+                      ...state,
+                      action: "editReference",
+                      reference: row.reference,
+                    },
+                    { method: "post" }
+                  ),
+                  dispatch({ type: "submit" })
+                )}
+              >
+                <IconCheck />
+              </ActionIcon>
+            </Tooltip>
+          </Flex>
+        </Table.Td>
+      ) : (
+        <Tooltip label="Edit">
+          <ActionIcon
+            bg={"white"}
+            mt={10}
+            onClick={() => !state.edit && dispatch({ type: "edit" })}
+          >
+            <IconDotsVertical color="black" />
+          </ActionIcon>
+        </Tooltip>
+      )}
     </Table.Tr>
   );
 }
@@ -270,8 +417,15 @@ function sortData(
   );
 }
 
-export function ShipmentTable(props: { data: RowData[]; method: string }) {
-  const { data, method } = props;
+export function ShipmentTable({
+  data,
+  method = "air",
+  edit = false,
+}: {
+  data: RowData[];
+  method?: string;
+  edit?: boolean;
+}) {
   const [search, setSearch] = useState("");
   const [sortedData, setSortedData] = useState(data);
   const [sortBy, setSortBy] = useState<keyof RowData | null>(null);
@@ -360,7 +514,7 @@ export function ShipmentTable(props: { data: RowData[]; method: string }) {
             >
               Packages
             </Th>
-            {(method === "air" || method == "all") && (
+            {method === "air" && (
               <Th
                 sorted={sortBy === "total_weight"}
                 reversed={reverseSortDirection}
@@ -369,7 +523,7 @@ export function ShipmentTable(props: { data: RowData[]; method: string }) {
                 Total Weight
               </Th>
             )}
-            {(method === "ocean" || method == "all") && (
+            {method === "ocean" && (
               <>
                 <Th
                   sorted={sortBy === "small"}
@@ -422,9 +576,7 @@ export function ShipmentTable(props: { data: RowData[]; method: string }) {
             rows
           ) : (
             <Table.Tr>
-              <Table.Td
-                colSpan={method === "all" ? 13 : method == "air" ? 11 : 12}
-              >
+              <Table.Td colSpan={method == "air" ? 11 : 12}>
                 <Text fw={500} ta="center">
                   Nothing found
                 </Text>
