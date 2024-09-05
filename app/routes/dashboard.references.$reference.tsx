@@ -1,26 +1,74 @@
 import { Button, Divider, Flex, Group, Stack, Title } from "@mantine/core";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  redirect,
+} from "@remix-run/node";
 import { useLoaderData, useSubmit } from "@remix-run/react";
 import jsPDF from "jspdf";
-import { supabaseServiceRoleClient } from "~/api/server";
+import { togglePaid, toggleReceived } from "~/api/reference";
+import { supabase } from "~/api/supabase";
 import { BoxTable } from "~/components/BoxTable/BoxTable";
-import { ShipmentTable } from "~/components/ShipmentTable/ShipmentTable";
+import { ShipmentTable } from "~/components/Shipment/ShipmentTable/ShipmentTable";
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   const formData = await request.formData();
 
-  const supabase = supabaseServiceRoleClient();
-  if (formData.get("action") === "delete") {
-    await supabase
-      .from("references")
-      .delete()
-      .eq("id", parseInt(params.reference as string));
+
+  switch (formData.get("action")) {
+    case "delete": {
+      const { error: incrementError } = await supabase.rpc("increment", {
+        table_name: "shipments",
+        row_id: parseInt(formData.get("shipment") as string),
+        x: -1 * parseInt(formData.get("packages") as string),
+        field_name: "packages",
+      });
+
+      if (incrementError) {
+        console.error(`reference | incrementError: ${incrementError.message}`);
+      }
+      await supabase
+        .from("references")
+        .delete()
+        .eq("id", parseInt(params.reference as string));
+      return null;
+    }
+
+    case "paid": {
+      togglePaid(formData);
+      return null;
+    }
+
+    case "received": {
+      toggleReceived(formData);
+      return null;
+    }
+
+    case "editReference": {
+      const { error } = await supabase
+        .from("references")
+        .update({
+          description: formData.get("description") as string,
+          notes: formData.get("notes") as string,
+          shipping: parseInt(formData.get("shipping") as string),
+          clearance: parseInt(formData.get("clearance") as string),
+        })
+        .eq("id", formData.get("reference") as string)
+        .single();
+      if (error) {
+        console.error(`shipmentDetails | editReferenceError: ${error.message}`);
+      }
+
+      return redirect(`/dashboard/references/${params.reference!}`, {
+        headers: { "X-Remix-Reload-Document": "true" },
+      });
+    }
   }
+
   return null;
 };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const supabase = supabaseServiceRoleClient();
 
   const { data: references, error: referencesError } = await supabase
     .from("references")
@@ -159,11 +207,11 @@ export default function Reference() {
 
   const reference = references?.at(0);
 
-  const submit = useSubmit(); 
+  const submit = useSubmit();
 
   return (
     <Flex>
-      <Stack mb={20} w={"60vw"} h={"70vh"} mx={"auto"}>
+      <Stack mb={20} w={"80vw"} h={"70vh"} mx={"auto"}>
         <Title order={1} mb={10}>
           {" "}
           Reference{" "}
@@ -191,8 +239,28 @@ export default function Reference() {
             >
               Print Label
             </Button>
-            <Button>Move Reference</Button>
-            <Button bg={"red"} onClick={() => submit({action: "delete"}, {method: "post"})}>Delete Reference</Button>
+            <Button
+              component="a"
+              href={`/dashboard/shipments/${reference?.shipment}`}
+              bg={"black"}
+            >
+              View Shipment
+            </Button>
+            <Button
+              bg={"red"}
+              onClick={() =>
+                submit(
+                  {
+                    action: "delete",
+                    packages: reference?.packages ?? 0,
+                    shipment: reference?.shipment ?? 0,
+                  },
+                  { method: "post" }
+                )
+              }
+            >
+              Delete Reference
+            </Button>
           </Group>
         </Group>
         <Divider />
@@ -200,17 +268,10 @@ export default function Reference() {
           <Title order={2} mb={10}>
             Details
           </Title>
-          <Button
-            component="a"
-            href={`/dashboard/shipments/${reference?.shipment}`}
-            bg={"black"}
-          >
-            View Shipment
-          </Button>
         </Group>
         <ShipmentTable
           data={data}
-          method={reference?.shipments?.method ?? ""}
+          method={reference?.shipments?.method}
         />
         {references?.at(0)?.shipments?.method === "air" && (
           <>

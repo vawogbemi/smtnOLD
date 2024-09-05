@@ -119,7 +119,7 @@ export function PackageCard(props: {
             defaultValue={"air"}
             data={[
               { value: "air", label: "Air" },
-              { value: "ocean", label: "Ocean" },
+              //{ value: "ocean", label: "Ocean" },
             ]}
             value={method ? method.value : undefined}
             onChange={(_value, option) => setMethod(option)}

@@ -1,11 +1,11 @@
 import { LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { useOutletContext } from "@remix-run/react";
 import { SupabaseClient,  } from "@supabase/supabase-js";
-import { supabaseAnonServerClient } from "~/api/server";
-import { LoginCard } from "~/components/LoginCard/LoginCard";
+import { supabaseClient } from "~/api/supabase";
+import { LoginCard } from "~/components/Misc/LoginCard/LoginCard";
 
 export async function loader({request}: LoaderFunctionArgs) {
-  const supabase = supabaseAnonServerClient(request)
+  const supabase = supabaseClient(request)
   
   const {data} = await supabase.auth.getSession()
 

@@ -111,7 +111,7 @@ function filterData(data: RowData[], search: string) {
     keys(data[0]).some((key) => {
       switch (key) {
         default:
-          item[key].toString().toLowerCase().includes(query);
+          return item[key].toString().includes(query);
       }
     })
   );

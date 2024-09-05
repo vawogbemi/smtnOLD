@@ -1,6 +1,5 @@
 import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { Outlet, useLoaderData, useLocation } from "@remix-run/react";
-import { supabaseServiceRoleClient } from "~/api/server";
 import {
   Button,
   Card,
@@ -14,9 +13,9 @@ import {
 import { IconCheck, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { upperFirst } from "@mantine/hooks";
+import { supabase } from "~/api/supabase";
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const supabase = supabaseServiceRoleClient();
 
   const { data: references } = await supabase
     .from("references")

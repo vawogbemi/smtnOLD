@@ -1,11 +1,18 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { ComboboxItem } from "@mantine/core";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  json,
+  redirect,
+} from "@remix-run/node";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
-import { supabaseServiceRoleClient } from "~/api/server";
-import { ShipmentTable } from "~/components/ShipmentTable/ShipmentTable";
+import { supabase } from "~/api/supabase";
+import { MessageCard } from "~/components/MessageCard/MessageCard";
+import { ShipmentTable } from "~/components/Shipment/ShipmentTable/ShipmentTable";
+import { sendMessage } from "~/api/send";
+import { togglePaid, toggleReceived } from "~/api/reference";
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const supabase = supabaseServiceRoleClient();
-
   const { data: references, error: referencesError } = await supabase
     .from("references")
     .select("*, customers (id, name), receivers (id, name)")
@@ -18,48 +25,61 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     );
   }
 
-  return json({ references });
+  const { data: deliveries, error: deliveriesError } = await supabase
+    .from("deliveries")
+    .select("*")
+    .eq("shipment", params.shipment!);
+
+  if (deliveriesError) {
+    console.error(
+      `shipmentDetails | deliveriesError: ${deliveriesError.message}`
+    );
+  }
+
+  return json({ references, deliveries });
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request, params }: ActionFunctionArgs) => {
   const formData = await request.formData();
 
-  if (formData.get("action") === "paid") {
-    const supabase = supabaseServiceRoleClient();
-    const { error } = await supabase
-      .from("references")
-      .update({ paid: parseInt(formData.get("paid") as string) ? false : true })
-      .eq("id", formData.get("id") as string)
-      .single();
-
-    if (error) {
-      console.error(`shipmentDetails | paidError: ${error.message}`);
+  switch (formData.get("action")) {
+    case "paid": {
+      togglePaid(formData);
+      return null;
     }
-    return null;
-  }
-
-  if (formData.get("action") === "received") {
-    const supabase = supabaseServiceRoleClient();
-    const { error } = await supabase
-      .from("references")
-      .update({
-        received: parseInt(formData.get("received") as string) ? false : true,
-      })
-      .eq("id", formData.get("id") as string)
-      .single();
-
-    if (error) {
-      console.error(`shipmentDetails | receivedError: ${error.message}`);
+    case "received": {
+      toggleReceived(formData);
+      return null;
     }
-    return null;
+    case "message": {
+      sendMessage(formData, parseInt(params.shipment!));
+      return redirect(`/dashboard/shipments/${params.shipment}`);
+    }
+    case "editReference": {
+      const { error } = await supabase
+        .from("references")
+        .update({
+          description: formData.get("description") as string,
+          notes: formData.get("notes") as string,
+          shipping: parseInt(formData.get("shipping") as string),
+          clearance: parseInt(formData.get("clearance") as string),
+        })
+        .eq("id", formData.get("reference") as string)
+        .single();
+      if (error) {
+        console.error(`shipmentDetails | editReferenceError: ${error.message}`);
+      }
+      return redirect(`/dashboard/shipments/${params.shipment!}`, {
+        headers: { "X-Remix-Reload-Document": "true" },
+      });
+    }
   }
-
   return null;
 };
 
 export default function Shipment() {
   const { references } = useLoaderData<typeof loader>();
-  const { shipment } = useOutletContext<{
+  const { shipment, view } = useOutletContext<{
     shipment:
       | {
           created_at: string;
@@ -72,25 +92,10 @@ export default function Shipment() {
           to: string;
         }
       | undefined;
-    references: {
-      sender: string;
-      receiver: string;
-      paid: string;
-      numbers: string;
-    }[];
-    setReferences: React.Dispatch<
-      React.SetStateAction<
-        {
-          sender: string;
-          receiver: string;
-          paid: string;
-          numbers: string;
-        }[]
-      >
-    >;
+    view: ComboboxItem;
   }>();
 
-  const data = (references ?? []).map((reference) => ({
+  const referenceData = (references ?? []).map((reference) => ({
     reference: reference.id,
     sender: {
       id: reference.customers?.id ?? 0,
@@ -112,15 +117,24 @@ export default function Shipment() {
     clearance: reference.clearance,
   }));
 
-  return (
-    <>
-      {shipment && data ? (
-        <>
-          <ShipmentTable data={data} method={shipment.method} />
-        </>
-      ) : (
-        <></>
-      )}
-    </>
-  );
+  const component = (view: ComboboxItem) => {
+    switch (view.value) {
+      case "shipment":
+        return (
+          <ShipmentTable
+            data={referenceData}
+            method={shipment?.method}
+            edit={false}
+          />
+        );
+      case "delivery":
+        return <p>Work in Progress</p>;
+      case "message":
+        return <MessageCard />;
+      default:
+        return <></>;
+    }
+  };
+
+  return <>{shipment && referenceData ? component(view) : <></>}</>;
 }

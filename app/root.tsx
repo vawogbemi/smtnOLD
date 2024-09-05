@@ -20,9 +20,9 @@ import {
 } from "@mantine/core";
 import cx from "clsx";
 import classes from "./root.module.css";
-import { HeaderSimple } from "./components/HeaderSimple/HeaderSimple";
+import { HeaderSimple } from "./components/Misc/HeaderSimple/HeaderSimple";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { supabaseAnonServerClient } from "./api/server";
+import { supabaseClient } from "./api/supabase";
 import { createBrowserClient } from "@supabase/ssr";
 
 const theme = createTheme({
@@ -38,7 +38,7 @@ const theme = createTheme({
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const supabase = await supabaseAnonServerClient(request);
+  const supabase = await supabaseClient(request);
 
   const user = await supabase.auth.getUser();
 

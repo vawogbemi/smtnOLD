@@ -278,10 +278,7 @@ export default function Index() {
 
           <Text size="sm" c="dimmed">
             Find answers to your most pressing questions on our comprehensive
-            FAQ page. We&apos;ve compiled a wealth of information covering
-            everything from shipping times and packaging guidelines to customs
-            regulations and insurance options. Can&apos;t find what you&apos;re
-            looking for?
+            FAQ page.
           </Text>
 
           <Button color="blue" fullWidth mt="md" radius="md" component="a" href="/faq">

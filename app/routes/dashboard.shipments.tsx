@@ -1,65 +1,99 @@
 import {
-  Button,
-  Card,
   ComboboxItem,
   Divider,
   Flex,
   Group,
   ScrollArea,
-  Select,
-  Stack,
-  Text,
-  Title,
-  Tooltip,
+  Stack, Title
 } from "@mantine/core";
-import { upperFirst } from "@mantine/hooks";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import {
   Outlet,
   useActionData,
   useLoaderData,
   useLocation,
-  useSubmit,
 } from "@remix-run/react";
-import { useEffect, useState } from "react";
-import { supabaseServiceRoleClient } from "~/api/server";
+import { useEffect, useReducer } from "react";
+import { sendSms } from "~/api/twilio";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { supabase } from "~/api/supabase";
+import { ShipmentFilters } from "~/components/Shipment/ShipmentFilters/ShipmentFilters";
+import { ShipmentActions } from "~/components/Shipment/ShipmentActions/ShipmentActions";
+import { ShipmentCard } from "~/components/Shipment/ShipmentCard/ShipmentCard";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-  const supabase = supabaseServiceRoleClient();
 
-  if (formData.get("action") === "status") {
-    await supabase
-      .from("shipments")
-      .update({ status: parseInt(formData.get("status") as string) + 1 })
-      .eq("id", formData.get("shipment") as string);
+  switch (formData.get("action")) {
+    case "status": {
+      await supabase
+        .from("shipments")
+        .update({
+          status: parseInt(formData.get("status") as string) + 1,
+          last_updated: new Date(Date.now()).toISOString(),
+        })
+        .eq("id", formData.get("shipment") as string);
 
-    /*if (parseInt(formData.get("status") as string) === 3) {
-      break;
-      //Send SMS
-    }*/
-    return undefined;
+      if (parseInt(formData.get("status") as string) === 3) {
+        const { data: references, error: referencesError } = await supabase
+          .from("references")
+          .select("id, customers(name, phone), receivers(name, phone)")
+          .eq("shipment", formData.get("shipment") as string);
+
+        if (referencesError) {
+          console.error(
+            `dashboard/shipments | referencesError: ${referencesError.message}`
+          );
+          return null;
+        }
+
+        const body = (name: string, id: number) =>
+          `Hello ${name},\n\n` +
+          "Your package is ready for pickup.\n\n" +
+          `Pickup: www.smtninternational.com/tracking/${id}/pickup\n\n` +
+          "Thank you for choosing Smtn International.\n\n\n" +
+          "DO NOT REPLY TO THIS NUMBER";
+
+        references.forEach(async (reference) => {
+          await sendSms({
+            from: process.env.TWILIO_PHONE_NUMBER!,
+            to: reference?.customers?.phone ?? "",
+            body: body(reference?.customers?.name ?? "", reference.id),
+          });
+          if (reference.customers?.phone !== reference.receivers?.phone) {
+            await sendSms({
+              from: process.env.TWILIO_PHONE_NUMBER!,
+              to: reference?.receivers?.phone ?? "",
+              body: body(reference?.receivers?.name ?? "", reference.id),
+            });
+          }
+        });
+
+        await supabase
+          .from("shipments")
+          .update({ status: parseInt(formData.get("status") as string) + 1 })
+          .eq("id", formData.get("shipment") as string);
+      }
+      return null;
+    }
+
+    case "manifest": {
+      const data = await supabase
+        .from("boxes")
+        .select(
+          "id, number, length, width, height, weight, references(id, shipment, paid, total_weight, shipping, clearance, description, notes, customers (name, phone), receivers (name, phone))"
+        )
+        .eq("references.shipment", parseInt(formData.get("shipment") as string))
+        .gt("reference", 1);
+      return data;
+    }
   }
 
-  if (formData.get("action") === "manifest") {
-    const data = await supabase
-      .from("boxes")
-      .select(
-        "number, length, width, height, weight, references(id, shipment, paid, total_weight, shipping, clearance, description, notes, customers (name), receivers (name))"
-      )
-      .eq("references.shipment", parseInt(formData.get("shipment") as string));
-
-    return data;
-  }
-
-  return undefined;
+  return null;
 };
 
 export const loader = async () => {
-  const supabase = supabaseServiceRoleClient();
-
   const { data: shipments, error: shipmentsError } = await supabase
     .from("shipments")
     .select("*")
@@ -74,53 +108,76 @@ export const loader = async () => {
   return json({ shipments });
 };
 
-function statusToString(status: number) {
-  switch (status) {
-    case 0:
-      return "Created";
-    case 1:
-      return "Confirmed";
-    case 2:
-      return "In Transit";
-    case 3:
-      return "Arrived";
-    case 4:
-      return "Notified";
-    default:
-      return "Unknown";
-  }
-}
-
 export default function Shipments() {
   const { shipments } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const pathnames = useLocation().pathname.split("/");
 
-  const [from, setFrom] = useState<ComboboxItem>({
-    value: "all",
-    label: "All",
-  });
-  const [to, setTo] = useState<ComboboxItem>({
-    value: "all",
-    label: "All",
-  });
-  const [method, setMethod] = useState<ComboboxItem>({
-    value: "all",
-    label: "All",
+  const reducer = (
+    state: {
+      from: ComboboxItem;
+      to: ComboboxItem;
+      method: ComboboxItem;
+      view: ComboboxItem;
+    },
+    action: { type: string; item?: ComboboxItem }
+  ) => {
+    switch (action.type) {
+      case "from":
+        if (action.item) {
+          if (
+            action.item.value === state.to.value &&
+            action.item.value !== "all"
+          ) {
+            return { ...state, from: action.item, to: state.from };
+          } else {
+            return { ...state, from: action.item };
+          }
+        }
+        return state;
+      case "to":
+        if (action.item) {
+          if (
+            action.item.value === state.from.value &&
+            action.item.value !== "all"
+          ) {
+            return { ...state, to: action.item, from: state.to };
+          } else {
+            return { ...state, to: action.item };
+          }
+        }
+        return state;
+      case "method":
+        if (action.item) {
+          return { ...state, method: action.item };
+        }
+        return state;
+      case "view":
+        if (action.item) {
+          return { ...state, view: action.item };
+        }
+        return state;
+      default:
+        return state;
+    }
+  };
+
+  const [state, dispatch] = useReducer(reducer, {
+    from: { value: "all", label: "All" } as ComboboxItem,
+    to: { value: "all", label: "All" } as ComboboxItem,
+    method: { value: "all", label: "All" } as ComboboxItem,
+    view: { value: "shipment", label: "Shipment" } as ComboboxItem,
   });
 
-  const submit = useSubmit();
   const location = useLocation();
+
   const currentShipmentId = parseInt(
     location.pathname.split("/").at(-1) as string
   );
   const currentShipment = shipments?.find(
     (shipment) => shipment.id == currentShipmentId
   );
-  const [references, setReferences] = useState<
-    { sender: string; receiver: string; paid: string; numbers: string }[]
-  >([]);
 
   useEffect(() => {
     if (actionData && actionData.data) {
@@ -138,7 +195,8 @@ export default function Shipments() {
       const tableData: (string | number)[][] = [];
       const visited: number[] = [];
       actionData.data.forEach((element) => {
-        if (visited.includes(element.references?.id ?? 0)) return;
+        if (!element.references || visited.includes(element.references?.id))
+          return;
         visited.push(element.references?.id ?? 0);
         const filteredData = actionData.data.filter(
           (row) => row.references?.id === element.references?.id
@@ -149,8 +207,12 @@ export default function Shipments() {
           } - ${
             filteredData.reduce((a, b) => (a.number > b.number ? a : b)).number
           }`,
-          filteredData[0].references?.customers?.name ?? "Unknown",
-          filteredData[0].references?.receivers?.name ?? "Unknown",
+          `${filteredData[0].references?.customers?.name ?? "Unknown"} (${
+            filteredData[0].references?.customers?.phone ?? "Unknown"
+          })`,
+          `${filteredData[0].references?.receivers?.name ?? "Unknown"} (${
+            filteredData[0].references?.receivers?.phone ?? "Unknown"
+          })`,
           filteredData[0].references?.description ?? "Unknown",
           filteredData[0].references?.notes ?? "Unknown",
           filteredData[0].references?.total_weight ?? "Unknown",
@@ -167,7 +229,7 @@ export default function Shipments() {
         body: tableData,
         styles: { minCellHeight: 20 },
       });
-      doc.save(`manifest_${currentShipmentId}_.pdf`);
+      doc.save(`manifest_${actionData.data[0].references?.shipment}_.pdf`);
     }
   }, [actionData]);
 
@@ -179,158 +241,51 @@ export default function Shipments() {
           Shipments{" "}
         </Title>
         <Group justify="space-between">
-          <Group mt={-22.5}>
-            <Select
-              label="From"
-              w={175}
-              data={[
-                { value: "all", label: "All" },
-                { value: "lagos", label: "Lagos" },
-                { value: "toronto", label: "Toronto" },
-              ]}
-              value={from ? from.value : undefined}
-              onChange={(_value, option) =>
-                option.value === to?.value && to?.value !== "all"
-                  ? (setTo(from), setFrom(option))
-                  : setFrom(option)
-              }
-            ></Select>
-            <Select
-              label="To"
-              w={175}
-              data={[
-                { value: "all", label: "All" },
-                { value: "lagos", label: "Lagos" },
-                { value: "toronto", label: "Toronto" },
-              ]}
-              value={to ? to.value : undefined}
-              onChange={(_value, option) =>
-                option.value === from?.value && from?.value !== "all"
-                  ? (setFrom(to), setTo(option))
-                  : setTo(option)
-              }
-            ></Select>
-            <Select
-              label="Method"
-              w={175}
-              data={[
-                { value: "all", label: "All" },
-                { value: "air", label: "Air" },
-                { value: "ocean", label: "Ocean" },
-              ]}
-              value={method ? method.value : undefined}
-              onChange={(_value, option) => setMethod(option)}
-            ></Select>
-          </Group>
-          <Group>
-            <Button>Toggle Delivery</Button>
-            <Button
-              disabled={!currentShipmentId}
-              onClick={() => {
-                submit(
-                  { action: "manifest", shipment: currentShipmentId },
-                  { method: "post" }
-                );
-              }}
-            >
-              Print Manifest
-            </Button>
-            <Button disabled={!currentShipmentId}>Send Sms</Button>
-            <Tooltip label="Next Status">
-              <Button
-                disabled={!currentShipmentId}
-                onClick={() =>
-                  submit(
-                    {
-                      action: "status",
-                      shipment: currentShipmentId,
-                      status: currentShipment?.status ?? -2,
-                    },
-                    { method: "post" }
-                  )
-                }
-              >
-                Next Status:{" "}
-                {statusToString((currentShipment?.status ?? -2) + 1)}
-              </Button>
-            </Tooltip>
-          </Group>
+          <ShipmentFilters state={state} dispatch={dispatch} />
+          <ShipmentActions
+            state={state}
+            currentShipmentId={currentShipmentId}
+            currentShipmentStatus={currentShipment?.status ?? -1}
+            dispatch={dispatch}
+          />
         </Group>
       </Stack>
       <Divider />
       <Flex h={"70vh"}>
-        <ScrollArea h={"70vh"} w={"35%"}>
-          {shipments &&
-            shipments
-              .filter(
-                (shipment) =>
-                  (from.value == "all" || shipment.from == from.value) &&
-                  (to.value == "all" || shipment.to == to.value) &&
-                  (method.value == "all" || shipment.method == method.value)
-              )
-              .map((shipment) => (
-                <Card
-                  key={shipment.id}
-                  component="a"
-                  href={`/dashboard/shipments/${shipment.id}`}
-                  withBorder
-                  style={{
-                    borderRadius: "0px",
-                    borderLeft: "0px",
-                    borderRight: "0px",
-                    borderTop: "0px",
-                    backgroundColor:
-                      pathnames.length > 0 &&
-                      parseInt(pathnames.at(-1)!) === shipment.id
-                        ? "#dee2e6"
-                        : "white",
-                  }}
-                  styles={{
-                    root: {
-                      ":hover": {
-                        bg: "#dee2e6",
-                      },
-                    },
-                  }}
-                  px={30}
-                  h={75}
-                >
-                  <Stack>
-                    <Group>
-                      <Text c={"gray"} size="sm">
-                        {upperFirst(shipment.from)}
-                      </Text>
-                      <Text c={"gray"} size="sm">
-                        {upperFirst(shipment.to)}
-                      </Text>
-                      <Text c={"gray"} size="sm">
-                        {upperFirst(shipment.method)}
-                      </Text>
-                    </Group>
-                    <Group mt={-20}>
-                      <Text>
-                        {new Date(shipment.created_at).toLocaleString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </Text>
-                      <Text>Packages: {shipment.packages}</Text>
-                      <Text>Status: {statusToString(shipment.status)}</Text>
-                    </Group>
-                  </Stack>
-                </Card>
-              ))}
-        </ScrollArea>
+        <Stack>
+          {currentShipment && (
+            <ShipmentCard shipment={currentShipment} isSelected={true} />
+          )}
+          <ScrollArea h={"70vh"} w={500}>
+            {shipments &&
+              shipments
+                .filter(
+                  (shipment) =>
+                    (state.from.value == "all" ||
+                      shipment.from == state.from.value) &&
+                    (state.to.value == "all" ||
+                      shipment.to == state.to.value) &&
+                    (state.method.value == "all" ||
+                      shipment.method == state.method.value) &&
+                    shipment.id !== currentShipmentId
+                )
+                .map((shipment) => (
+                  <ShipmentCard
+                    key={shipment.id}
+                    shipment={shipment}
+                    isSelected={false}
+                  />
+                ))}
+          </ScrollArea>
+        </Stack>
         <Divider orientation="vertical" mx={2} />
-        <ScrollArea h={"70vh"} w={"65%"}>
+        <ScrollArea h={"70vh"} w={"100%"}>
           <Outlet
             context={{
               shipment: shipments?.find(
                 (shipment) => shipment.id === parseInt(pathnames.at(-1)!)
               ),
-              references,
-              setReferences,
+              view: state.view,
             }}
           />
         </ScrollArea>

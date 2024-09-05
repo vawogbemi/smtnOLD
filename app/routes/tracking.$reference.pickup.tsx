@@ -7,14 +7,12 @@ import {
 import { useState } from "react";
 import { Button, Stack, Title } from "@mantine/core";
 import { Reference } from "./tracking.$reference";
-import { supabaseServiceRoleClient } from "~/api/server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { IconCheck } from "@tabler/icons-react";
+import { supabase } from "~/api/supabase";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
-
-  const supabase = supabaseServiceRoleClient();
 
   await supabase
     .from("references")
@@ -25,8 +23,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const supabase = supabaseServiceRoleClient();
-
   const { data: boxes } = await supabase
     .from("boxes")
     .select("*")
@@ -44,6 +40,7 @@ export default function Pickup() {
 
   return (
     <Stack align="center" mt={75}>
+      <Title order={2}>Show this page to staff upon pick up</Title>
       <Title order={4}>{reference.receivers?.name ?? "Unknown"}</Title>
       <Title order={1}>Boxes</Title>
       <Title order={1}>
@@ -59,9 +56,12 @@ export default function Pickup() {
       ) : (
         <>
           <Title order={5}>Amount Owed</Title>
-          <Title
-            order={6}
-          >{`Shipping: ${reference.shipping} Clearance: ${reference.clearance}`}</Title>
+          <Title order={6}>{`Shipping: ${
+            reference.shipments?.from == "toronto" ? "$" : "₦"
+          }${reference.shipping}
+           Clearance: ${reference.shipments?.to == "toronto" ? "$" : "₦"}${
+            reference.clearance
+          }`}</Title>
         </>
       )}
       {pickedUp ? (

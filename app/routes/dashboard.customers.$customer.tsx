@@ -1,10 +1,26 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { useLoaderData, useOutletContext } from "@remix-run/react";
-import { supabaseServiceRoleClient } from "~/api/server";
-import { ShipmentTable } from "~/components/ShipmentTable/ShipmentTable";
+import { togglePaid, toggleReceived } from "~/api/reference";
+import { supabase } from "~/api/supabase";
+import { ShipmentTable } from "~/components/Shipment/ShipmentTable/ShipmentTable";
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+
+  switch (formData.get("action")) {
+    case "paid": {
+      togglePaid(formData);
+      return null;
+    }
+    case "received": {
+      toggleReceived(formData);
+      return null;
+    }
+  }
+  return null
+}
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const supabase = supabaseServiceRoleClient();
 
   const { data: references, error: referencesError } = await supabase
     .from("references")

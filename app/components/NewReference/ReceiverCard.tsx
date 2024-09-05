@@ -1,5 +1,5 @@
 import { Button, Group, Stack, TextInput } from "@mantine/core";
-import { PhoneSelect } from "../PhoneSelect/PhoneSelect";
+import { PhoneSelect } from "../Misc/PhoneSelect/PhoneSelect";
 import { useState } from "react";
 import { FormType } from "./NewReferenceForm";
 
