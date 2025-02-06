@@ -84,8 +84,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         .select(
           "id, number, length, width, height, weight, references(id, shipment, paid, total_weight, shipping, clearance, description, notes, customers (name, phone), receivers (name, phone))"
         )
+        .not("references", "is", null)
         .eq("references.shipment", parseInt(formData.get("shipment") as string))
-        .gt("reference", 1);
       return data;
     }
   }
@@ -181,6 +181,7 @@ export default function Shipments() {
 
   useEffect(() => {
     if (actionData && actionData.data) {
+      console.log(actionData)
       const doc = new jsPDF("landscape");
 
       const tableHeaders = [
