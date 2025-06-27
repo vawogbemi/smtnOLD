@@ -35,6 +35,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         })
         .eq("id", formData.get("shipment") as string);
 
+        fetch("https://www.smtncargo.com/smtn/webhook/status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            shipment: { 
+              id: formData.get("shipment") as string,
+              status: parseInt(formData.get("status") as string) + 1 
+            },
+          }),
+        });
+
       if (parseInt(formData.get("status") as string) === 3) {
         const { data: references, error: referencesError } = await supabase
           .from("references")
@@ -50,9 +63,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         const body = (name: string, id: number) =>
           `Hello ${name},\n\n` +
-          "Your package is ready for pickup.\n\n" +
-          `Pickup: www.smtninternational.com/tracking/${id}/pickup\n\n` +
-          "Thank you for choosing Smtn International.\n\n\n" +
+          "Your order is ready for pickup.\n\n" +
+          `Pickup: www.smtncargo.com/o/${id}/pickup\n\n` +
+          "Thank you for choosing SMTN International.\n\n\n" +
           "DO NOT REPLY TO THIS NUMBER";
 
         references.forEach(async (reference) => {

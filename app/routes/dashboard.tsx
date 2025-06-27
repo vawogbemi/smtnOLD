@@ -42,6 +42,19 @@ async function submitReference(formData: FormData) {
 
   await updateShipmentPackages(shipment, formData);
   await sendConfirmation(formData, reference);
+  
+  fetch("https://www.smtncargo.com/smtn/webhook/order", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      customer,
+      shipment,
+      receiver,
+      reference,
+    }),
+  });
 
   return redirect(`/dashboard/references/${reference.id}`);
 }

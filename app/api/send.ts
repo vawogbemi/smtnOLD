@@ -5,7 +5,7 @@ export async function sendConfirmation(
   formData: FormData,
   reference: { id: number }
 ) {
-  const body = `Your reference has been created\n\nTrack your package(s) here: https://www.smtninternational.com/tracking/${reference.id}\n\nThank you for choosing SMTN International! \n\nAdvertisement\n____________________\nCover you wife with the blood of Jesus\nhttps://www.prayformywife.com \n\nDO NOT REPLY TO THIS NUMBER`;
+  const body = `Your order has been created\n\nTrack your order here: https://www.smtncargo.com/o/${reference.id}\n\nThank you for choosing SMTN International! \n\nDO NOT REPLY TO THIS NUMBER`;
 
   await Promise.all([
     sendSms({
