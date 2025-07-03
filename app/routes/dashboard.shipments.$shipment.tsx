@@ -15,7 +15,7 @@ import { togglePaid, toggleReceived } from "~/api/reference";
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const { data: references, error: referencesError } = await supabase
     .from("references")
-    .select("*, customers (id, name), receivers (id, name)")
+    .select("*, customers (id, name, phone), receivers (id, name, phone)")
     .eq("shipment", params.shipment!)
     .order("id", { ascending: true });
 
@@ -100,10 +100,12 @@ export default function Shipment() {
     sender: {
       id: reference.customers?.id ?? 0,
       name: reference.customers?.name ?? "Unknown",
+      phone: reference.customers?.phone ?? "Unknown",
     },
     receiver: {
       id: reference.receivers?.id ?? 0,
       name: reference.receivers?.name ?? "Unknown",
+      phone: reference.receivers?.phone ?? "Unknown",
     },
     description: reference.description,
     notes: reference.notes,

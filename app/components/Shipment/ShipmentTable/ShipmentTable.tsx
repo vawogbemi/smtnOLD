@@ -23,8 +23,8 @@ import { useNavigate, useSubmit } from "@remix-run/react";
 
 interface RowData {
   reference: number;
-  sender: { id: number; name: string };
-  receiver: { id: number; name: string };
+  sender: { id: number; name: string; phone: string };
+  receiver: { id: number; name: string; phone: string };
   description: string;
   notes: string;
   paid: boolean;
@@ -153,7 +153,7 @@ function Row(props: { row: RowData; method: string }) {
       </Table.Td>
 
       <Table.Td className={classes.th}>
-        <Tooltip label={row.receiver.name}>
+        <Tooltip label={row.receiver.name + " • " + row.receiver.phone}>
           <UnstyledButton className={classes.control}>
             <Text truncate="end">{row.receiver.name}</Text>
           </UnstyledButton>

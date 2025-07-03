@@ -8,9 +8,7 @@ export function CustomerCard(props: {
   form: FormType
   data:
     | {
-        address: string;
         created_at: string;
-        email: string | null;
         id: number;
         name: string | null;
         phone: string;
@@ -26,8 +24,6 @@ export function CustomerCard(props: {
   const [clicked, setClicked] = useState(false);
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
 
   return (
     <Stack h={{ xs: 1000, sm: 800, md: 600 }} py={25}>
@@ -63,12 +59,6 @@ export function CustomerCard(props: {
             </Title>
             <Title order={2}>{data.name}</Title>
             <Title order={4} c={"gray"}>
-              {data.address}
-            </Title>
-            <Title order={4} c={"gray"}>
-              {data.email}
-            </Title>
-            <Title order={4} c={"gray"}>
               Joined: {new Date(data.created_at).toLocaleString()}
             </Title>
           </>
@@ -84,25 +74,11 @@ export function CustomerCard(props: {
               required
               onChange={(e) => setName(e.target.value)}
             ></TextInput>
-            <TextInput
-              label="Email"
-              w={600}
-              required
-              onChange={(e) => setEmail(e.target.value)}
-            ></TextInput>
-            <TextInput
-              label="Address"
-              w={600}
-              required
-              onChange={(e) => setAddress(e.target.value)}
-            ></TextInput>
             <Button
               type="button"
               disabled={
                 !phone ||
                 name.length < 3 ||
-                email.length < 3 ||
-                address.length < 3 ||
                 phone.length < 8 ||
                 !phone.startsWith("+")
               }
@@ -112,8 +88,6 @@ export function CustomerCard(props: {
                     action: "createCustomer",
                     phone: phone,
                     name: name,
-                    email: email,
-                    address: address,
                   },
                   { method: "post" }
                 )

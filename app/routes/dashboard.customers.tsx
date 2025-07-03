@@ -100,8 +100,7 @@ export default function Shipments() {
             w={200}
             label={`${currentCustomer.name} • ${
               currentCustomer.phone
-            } • ${currentCustomer.email.toLowerCase()} •
-          ${currentCustomer.address}`}
+            }`}
           >
             <Card
               component="a"
@@ -160,8 +159,7 @@ export default function Shipments() {
                       w={200}
                       label={`${customer.name} • ${
                         customer.phone
-                      } • ${customer.email.toLowerCase()} •
-                    ${customer.address}`}
+                      }`}
                     >
                       <Stack>
                         <Group>

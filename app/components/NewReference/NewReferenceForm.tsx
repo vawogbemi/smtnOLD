@@ -68,9 +68,7 @@ export type FormType = UseFormReturnType<
 export function NewReferenceForm(props: {
   data:
     | {
-        address: string;
         created_at: string;
-        email: string | null;
         id: number;
         name: string | null;
         phone: string;

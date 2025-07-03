@@ -8,8 +8,6 @@ export async function createCustomer(
     .insert({
       phone: formData.get("phone") as string,
       name: formData.get("name") as string,
-      email: formData.get("email") as string,
-      address: formData.get("address") as string,
     })
     .select("*")
     .single();

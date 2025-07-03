@@ -42,9 +42,7 @@ export default function Shipment() {
   const { customer } = useOutletContext<{
     customer:
       | {
-          address: string;
           created_at: string;
-          email: string;
           id: number;
           name: string;
           phone: string;
@@ -57,10 +55,12 @@ export default function Shipment() {
     sender: {
       id: reference.customers?.id ?? 0,
       name: reference.customers?.name ?? "Unknown",
+      phone: reference.customers?.phone ?? "Unknown",
     },
     receiver: {
       id: reference.receivers?.id ?? 0,
       name: reference.receivers?.name ?? "Unknown",
+      phone: reference.receivers?.phone ?? "Unknown",
     },
     notes: reference.notes,
     description: reference.description,

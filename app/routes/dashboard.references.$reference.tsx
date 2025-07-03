@@ -188,10 +188,12 @@ export default function Reference() {
     sender: {
       id: reference.customers?.id ?? 0,
       name: reference.customers?.name ?? "Unknown",
+      phone: reference.customers?.phone ?? "Unknown",
     },
     receiver: {
       id: reference.receivers?.id ?? 0,
       name: reference.receivers?.name ?? "Unknown",
+      phone: reference.receivers?.phone ?? "Unknown",
     },
     description: reference.description,
     notes: reference.notes,
