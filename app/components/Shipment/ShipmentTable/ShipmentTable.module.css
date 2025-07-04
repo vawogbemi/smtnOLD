@@ -1,10 +1,17 @@
 .th {
     padding: 0;
+    min-width: 200px;
+    width: 200px;
+    box-sizing: border-box;
+    user-select: text;
   }
   
   .control {
     width: 100%;
+    min-width: 200px;
+    max-width: 200px;
     padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+    user-select: text;
   
     @mixin hover {
       background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
@@ -16,3 +23,17 @@
     height: rem(21px);
     border-radius: rem(10px);
   }
+
+.tableScroll {
+  overflow-x: auto;
+  width: 100%;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* Ensure the search bar always fills the width */
+.tableScroll > *:first-child {
+  width: 100%;
+}

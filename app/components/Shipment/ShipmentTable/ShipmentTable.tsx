@@ -142,10 +142,13 @@ function Row(props: { row: RowData; method: string }) {
       </Table.Td>
 
       <Table.Td className={classes.th}>
-        <Tooltip label={row.sender.name}>
+        <Tooltip label={row.sender.name + " • " + row.sender.phone}>
           <UnstyledButton
             className={classes.control}
-            onClick={() => navigate(`/dashboard/customers/${row.sender.id}`)}
+            onClick={() => {
+              const phone = row.sender.phone.replace(/^\+234|\+1/, "");
+              navigator.clipboard.writeText(phone);
+            }}
           >
             <Text truncate="end">{row.sender.name}</Text>
           </UnstyledButton>
@@ -154,7 +157,13 @@ function Row(props: { row: RowData; method: string }) {
 
       <Table.Td className={classes.th}>
         <Tooltip label={row.receiver.name + " • " + row.receiver.phone}>
-          <UnstyledButton className={classes.control}>
+          <UnstyledButton
+            className={classes.control}
+            onClick={() => {
+              const phone = row.receiver.phone.replace(/^\+234|\+1/, "");
+              navigator.clipboard.writeText(phone);
+            }}
+          >
             <Text truncate="end">{row.receiver.name}</Text>
           </UnstyledButton>
         </Tooltip>
@@ -403,7 +412,7 @@ export function ShipmentTable({
   ));
 
   return (
-    <ScrollArea>
+    <ScrollArea className={classes.tableScroll}>
       <TextInput
         placeholder="Search by any field"
         mb="md"
@@ -415,6 +424,7 @@ export function ShipmentTable({
         }
         value={search}
         onChange={handleSearchChange}
+        style={{ width: '100%' }}
       />
       <Table
         horizontalSpacing="md"

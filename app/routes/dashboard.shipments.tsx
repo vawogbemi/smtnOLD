@@ -270,7 +270,7 @@ export default function Shipments() {
           {currentShipment && (
             <ShipmentCard shipment={currentShipment} isSelected={true} />
           )}
-          <ScrollArea h={"70vh"} w={500}>
+          <ScrollArea h={"70vh"} w={350}>
             {shipments &&
               shipments
                 .filter(

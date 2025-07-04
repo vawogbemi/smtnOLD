@@ -66,11 +66,10 @@ export default function Shipments() {
           <Group>
             <Input
               placeholder="Search"
-              w={400}
+              w={"100%"}
               onChange={(e) => setSearch(e.target.value)}
             />
           </Group>
-
           <Group>
             <Select
               disabled={!currentCustomerId}
@@ -97,7 +96,7 @@ export default function Shipments() {
           {currentCustomer && (
             <Tooltip
             multiline
-            w={200}
+            w={350}
             label={`${currentCustomer.name} • ${
               currentCustomer.phone
             }`}
@@ -125,7 +124,7 @@ export default function Shipments() {
             </Card>
             </Tooltip>
           )}
-          <ScrollArea h={"70vh"} w={500}>
+          <ScrollArea h={"70vh"} w={350}>
             {customers &&
               customers
                 .filter(

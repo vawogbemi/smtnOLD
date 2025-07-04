@@ -36,8 +36,8 @@ export function ShipmentCard({ shipment, isSelected }: ShipmentCardProps) {
           },
         },
       }}
-      w={500}
-      px={30}
+      w={350}
+      px={20}
       h={75}
     >
       <Stack>
@@ -60,8 +60,8 @@ export function ShipmentCard({ shipment, isSelected }: ShipmentCardProps) {
               year: "numeric",
             })}
           </Text>
-          <Text>Packages: {shipment.packages}</Text>
-          <Text>Status: {statusToString(shipment.status)}</Text>
+          <Text>{shipment.packages} packages</Text>
+          <Text>{statusToString(shipment.status)}</Text>
         </Group>
       </Stack>
     </Card>

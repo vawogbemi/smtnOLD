@@ -24,7 +24,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   const { data: references, error: referencesError } = await supabase
     .from("references")
-    .select("*, customers (id, name), receivers (id, name)")
+    .select("*, customers (id, name, phone), receivers (id, name, phone)")
     .eq("sender", params.customer!)
     .order("id", { ascending: false });
 

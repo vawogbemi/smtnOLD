@@ -38,7 +38,7 @@ const offices: Office[] = [
     currency: "$",
     clearance_currency: null,
     divisor: 5,
-    rates: [20, 15, 12],
+    rates: [20, 15, 11],
     clearance: null,
   },
   {
